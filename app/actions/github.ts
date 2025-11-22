@@ -1,7 +1,7 @@
 "use server";
 
 import { getCurrentSession } from "@/lib/auth/session";
-import { supabase, supabaseAdmin } from "@/lib/supabase/client";
+import { supabaseAdmin } from "@/lib/supabase/client";
 import { createGitHubClient, extractRateLimitInfo } from "@/lib/github/client";
 import { transformEventsToActivities } from "@/lib/github/transformers";
 import type {
