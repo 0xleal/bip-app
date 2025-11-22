@@ -342,15 +342,23 @@ export const authOptions: NextAuthOptions = {
           ? account.expires_at * 1000
           : undefined;
 
-        // Get user ID from database
+        // Get user ID and Notion credentials from database
         const { data: userData } = await supabaseAdmin
           .from("users")
-          .select("id")
+          .select("id, notion_access_token, notion_workspace_user_id, notion_bot_id, notion_workspace_id")
           .eq("github_id", token.github_id)
           .single();
 
         if (userData) {
           token.id = userData.id;
+
+          // Restore Notion credentials if they exist
+          if (userData.notion_access_token) {
+            token.notionAccessToken = userData.notion_access_token;
+            token.notionWorkspaceUserId = userData.notion_workspace_user_id || undefined;
+            token.notionBotId = userData.notion_bot_id || undefined;
+            token.notionWorkspaceId = userData.notion_workspace_id || undefined;
+          }
         }
       }
 
