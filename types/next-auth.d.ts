@@ -12,6 +12,8 @@ declare module "next-auth" {
       image?: string | null;
     };
     accessToken?: string;
+    notionAccessToken?: string;
+    notionWorkspaceUserId?: string;
   }
 
   interface User {
@@ -32,5 +34,9 @@ declare module "next-auth/jwt" {
     accessToken?: string;
     refreshToken?: string;
     accessTokenExpires?: number;
+    notionAccessToken?: string;
+    notionWorkspaceUserId?: string;
+    notionBotId?: string;
+    notionWorkspaceId?: string;
   }
 }
