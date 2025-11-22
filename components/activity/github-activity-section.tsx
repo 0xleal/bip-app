@@ -3,11 +3,31 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { RefreshCwIcon } from 'lucide-react';
 import { ActivityTimeline } from './activity-timeline';
-import { ActivityFilters } from './activity-filters';
 import { getGitHubActivities, syncGitHubActivity } from '@/app/actions/github';
 import type { DateRange, GitHubActivity } from '@/lib/github/types';
 import { toast } from 'sonner';
+
+/**
+ * Format timestamp to relative time for "Last synced" display
+ */
+function formatTimeAgo(timestamp: string): string {
+  const now = new Date();
+  const date = new Date(timestamp);
+  const diffMs = now.getTime() - date.getTime();
+  const diffMinutes = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMinutes / 60);
+
+  if (diffHours > 0) {
+    return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+  } else if (diffMinutes > 0) {
+    return `${diffMinutes} minute${diffMinutes > 1 ? 's' : ''} ago`;
+  } else {
+    return 'Just now';
+  }
+}
 
 function ActivitySkeleton() {
   return (
@@ -28,9 +48,12 @@ function ActivitySkeleton() {
   );
 }
 
-export function GitHubActivitySection() {
+interface GitHubActivitySectionProps {
+  dateRange: DateRange;
+}
+
+export function GitHubActivitySection({ dateRange }: GitHubActivitySectionProps) {
   const [activities, setActivities] = useState<GitHubActivity[]>([]);
-  const [dateRange, setDateRange] = useState<DateRange>('7d');
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSynced, setLastSynced] = useState<string | null>(null);
@@ -147,19 +170,36 @@ export function GitHubActivitySection() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
-          <CardDescription>
-            Your commits, PRs, reviews, and stars from GitHub
-          </CardDescription>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <CardTitle>Recent Activity</CardTitle>
+              <CardDescription>
+                Your commits, PRs, reviews, and stars from GitHub
+              </CardDescription>
+            </div>
+
+            {/* Sync Controls */}
+            <div className="flex items-center gap-4 flex-shrink-0">
+              {lastSynced && !isSyncing && (
+                <span className="text-sm text-muted-foreground">
+                  Last synced: {formatTimeAgo(lastSynced)}
+                </span>
+              )}
+
+              <Button
+                onClick={handleSync}
+                disabled={isSyncing}
+                size="sm"
+                variant="outline"
+                className="gap-2"
+              >
+                <RefreshCwIcon className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                {isSyncing ? 'Syncing...' : 'Sync'}
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          <ActivityFilters
-            dateRange={dateRange}
-            onDateRangeChange={setDateRange}
-            lastSynced={lastSynced}
-            isSyncing={isSyncing}
-            onSync={handleSync}
-          />
 
           {error && (
             <div className="text-center py-8 px-4">
