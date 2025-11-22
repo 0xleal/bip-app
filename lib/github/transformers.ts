@@ -18,7 +18,7 @@ type GitHubEvent = any;
 export function transformEventsToActivities(
   events: GitHubEvent[],
   userId: string,
-  reposWithCommits?: Map<string, unknown[]>
+  reposWithCommits?: Map<string, unknown[]>,
 ): GitHubActivityInsert[] {
   const activities: GitHubActivityInsert[] = [];
 
@@ -39,7 +39,7 @@ export function transformEventsToActivities(
 function transformSingleEvent(
   event: GitHubEvent,
   userId: string,
-  reposWithCommits?: Map<string, unknown[]>
+  reposWithCommits?: Map<string, unknown[]>,
 ): GitHubActivityInsert | null {
   const repoName = event.repo?.name || "Unknown";
   const createdAt = event.created_at;
@@ -51,7 +51,7 @@ function transformSingleEvent(
         userId,
         repoName,
         createdAt,
-        reposWithCommits
+        reposWithCommits,
       );
 
     case "PullRequestEvent":
@@ -62,7 +62,7 @@ function transformSingleEvent(
         event,
         userId,
         repoName,
-        createdAt
+        createdAt,
       );
 
     case "WatchEvent":
@@ -98,7 +98,7 @@ function transformPushEvent(
   userId: string,
   repoName: string,
   createdAt: string,
-  reposWithCommits?: Map<string, unknown[]>
+  reposWithCommits?: Map<string, unknown[]>,
 ): GitHubActivityInsert {
   // Try to get commits from the Commits API first (more reliable)
   const apiCommits = reposWithCommits?.get(repoName) as
@@ -169,7 +169,7 @@ function transformPushEvent(
     description: commitCount > 0 ? commitDescription : undefined,
     url: `https://github.com/${repoName}/commits/${event.payload?.ref?.replace(
       "refs/heads/",
-      ""
+      "",
     )}`,
     repo_name: repoName,
     metadata: {
@@ -194,7 +194,7 @@ function transformPullRequestEvent(
   event: GitHubEvent,
   userId: string,
   repoName: string,
-  createdAt: string
+  createdAt: string,
 ): GitHubActivityInsert {
   const pr = event.payload?.pull_request;
   const action = event.payload?.action;
@@ -226,7 +226,7 @@ function transformPullRequestReviewEvent(
   event: GitHubEvent,
   userId: string,
   repoName: string,
-  createdAt: string
+  createdAt: string,
 ): GitHubActivityInsert {
   const review = event.payload?.review;
   const pr = event.payload?.pull_request;
@@ -259,7 +259,7 @@ function transformWatchEvent(
   event: GitHubEvent,
   userId: string,
   repoName: string,
-  createdAt: string
+  createdAt: string,
 ): GitHubActivityInsert {
   return {
     user_id: userId,
@@ -284,7 +284,7 @@ function transformIssuesEvent(
   event: GitHubEvent,
   userId: string,
   repoName: string,
-  createdAt: string
+  createdAt: string,
 ): GitHubActivityInsert {
   const issue = event.payload?.issue;
   const action = event.payload?.action;
@@ -299,8 +299,8 @@ function transformIssuesEvent(
       action === "opened"
         ? "Opened"
         : action === "closed"
-        ? "Closed"
-        : "Updated"
+          ? "Closed"
+          : "Updated"
     } issue: ${title}`,
     description,
     url: issue?.html_url,
@@ -322,7 +322,7 @@ function transformIssueCommentEvent(
   event: GitHubEvent,
   userId: string,
   repoName: string,
-  createdAt: string
+  createdAt: string,
 ): GitHubActivityInsert {
   const comment = event.payload?.comment;
   const issue = event.payload?.issue;
@@ -354,7 +354,7 @@ function transformCreateEvent(
   event: GitHubEvent,
   userId: string,
   repoName: string,
-  createdAt: string
+  createdAt: string,
 ): GitHubActivityInsert {
   const refType = event.payload?.ref_type;
   const ref = event.payload?.ref;

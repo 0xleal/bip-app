@@ -5,7 +5,7 @@ import type { GitHubActivity } from "@/lib/github/types";
  * Group activities by date
  */
 function groupActivitiesByDate(
-  activities: GitHubActivity[]
+  activities: GitHubActivity[],
 ): Record<string, GitHubActivity[]> {
   const grouped: Record<string, GitHubActivity[]> = {};
 
@@ -35,17 +35,17 @@ function formatDateHeader(dateString: string): string {
   const dateOnly = new Date(
     date.getFullYear(),
     date.getMonth(),
-    date.getDate()
+    date.getDate(),
   );
   const todayOnly = new Date(
     today.getFullYear(),
     today.getMonth(),
-    today.getDate()
+    today.getDate(),
   );
   const yesterdayOnly = new Date(
     yesterday.getFullYear(),
     yesterday.getMonth(),
-    yesterday.getDate()
+    yesterday.getDate(),
   );
 
   if (dateOnly.getTime() === todayOnly.getTime()) {
@@ -82,7 +82,7 @@ export function ActivityTimeline({ activities }: ActivityTimelineProps) {
 
   const groupedActivities = groupActivitiesByDate(activities);
   const sortedDates = Object.keys(groupedActivities).sort((a, b) =>
-    b.localeCompare(a)
+    b.localeCompare(a),
   );
 
   return (

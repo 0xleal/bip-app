@@ -15,7 +15,7 @@ import type {
  */
 function calculateDateThreshold(
   dateRange: "24h" | "7d" | "30d" | "custom",
-  customStartDate?: string
+  customStartDate?: string,
 ): string {
   if (dateRange === "custom" && customStartDate) {
     return customStartDate;
@@ -83,7 +83,7 @@ export async function createNote(content: string): Promise<CreateNoteResult> {
  * Server Action to fetch notes with optional date filtering
  */
 export async function getNotes(
-  options: GetNotesOptions = {}
+  options: GetNotesOptions = {},
 ): Promise<GetNotesResult> {
   try {
     const session = await getCurrentSession();

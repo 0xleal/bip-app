@@ -12,17 +12,13 @@ import type {
   NotionDatabase,
 } from "@/lib/notion/types";
 import { isFullPage, isFullDatabase } from "@notionhq/client";
-import type {
-  PageObjectResponse,
-  DatabaseObjectResponse,
-} from "@notionhq/client/build/src/api-endpoints";
 
 /**
  * Calculate date threshold for date range filtering
  */
 function calculateDateThreshold(
   dateRange: "24h" | "7d" | "30d" | "custom",
-  customStartDate?: string
+  customStartDate?: string,
 ): string {
   if (dateRange === "custom" && customStartDate) {
     return customStartDate;
@@ -47,7 +43,7 @@ function calculateDateThreshold(
  * Supports date range filtering
  */
 export async function getNotionActivities(
-  options: GetNotionActivitiesOptions = {}
+  options: GetNotionActivitiesOptions = {},
 ): Promise<GetNotionActivitiesResult> {
   try {
     const session = await getCurrentSession();
@@ -174,9 +170,10 @@ export async function syncNotionActivity(): Promise<SyncNotionResult> {
 
         // Check if we've gone past our date threshold (optimization)
         if (searchResponse.results.length > 0) {
-          const oldestItem = searchResponse.results[searchResponse.results.length - 1];
+          const oldestItem =
+            searchResponse.results[searchResponse.results.length - 1];
 
-          if ((isFullPage(oldestItem) || isFullDatabase(oldestItem))) {
+          if (isFullPage(oldestItem) || isFullDatabase(oldestItem)) {
             const oldestTime = new Date(oldestItem.last_edited_time);
             if (oldestTime < dateThreshold) {
               // We've gone past 30 days, stop paginating
@@ -205,7 +202,7 @@ export async function syncNotionActivity(): Promise<SyncNotionResult> {
       allResults,
       userId,
       workspaceUserId,
-      dateThreshold
+      dateThreshold,
     );
 
     // Step 5: First, clean up any existing duplicates before upserting
@@ -291,7 +288,10 @@ export async function syncNotionActivity(): Promise<SyncNotionResult> {
         try {
           content = await fetchPageContent(notionPageId, accessToken);
         } catch (contentError) {
-          console.error(`Failed to fetch content for page ${notionPageId}:`, contentError);
+          console.error(
+            `Failed to fetch content for page ${notionPageId}:`,
+            contentError,
+          );
           // Continue without content - we still want to save the activity
         }
 
@@ -359,4 +359,3 @@ export async function syncNotionActivity(): Promise<SyncNotionResult> {
     };
   }
 }
-

@@ -108,6 +108,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 You'll need to create these tables in Supabase:
 
 ### `github_activities` table
+
 ```sql
 CREATE TABLE github_activities (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -128,6 +129,7 @@ CREATE INDEX idx_github_activities_created_at ON github_activities(created_at);
 ```
 
 ### `manual_notes` table
+
 ```sql
 CREATE TABLE manual_notes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -142,6 +144,7 @@ CREATE INDEX idx_manual_notes_created_at ON manual_notes(created_at);
 ```
 
 ### `content_generations` table
+
 ```sql
 CREATE TABLE content_generations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -156,6 +159,7 @@ CREATE INDEX idx_content_generations_created_at ON content_generations(created_a
 ```
 
 ### `rate_limits` table
+
 ```sql
 CREATE TABLE rate_limits (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -242,6 +246,7 @@ MIT
 ## Support
 
 If you encounter issues:
+
 1. Ensure all environment variables are correctly set
 2. Verify your Supabase tables are created with the correct schema
 3. Check that your GitHub OAuth app has the required scopes

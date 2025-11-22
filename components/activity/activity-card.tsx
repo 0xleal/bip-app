@@ -18,7 +18,7 @@ import type { NotionActivityMetadata } from "@/lib/notion/types";
  * Extract commits from activity metadata
  */
 function getCommitsFromMetadata(
-  metadata: unknown
+  metadata: unknown,
 ): Array<{ sha: string; message: string }> {
   if (!metadata || typeof metadata !== "object") return [];
 
@@ -30,7 +30,7 @@ function getCommitsFromMetadata(
   return commits
     .filter(
       (c): c is { sha: string; message: string } =>
-        typeof c === "object" && c !== null && "sha" in c && "message" in c
+        typeof c === "object" && c !== null && "sha" in c && "message" in c,
     )
     .map((c) => ({
       sha: c.sha,
@@ -45,11 +45,16 @@ function getActivityIcon(activityType: string, metadata?: unknown) {
   const iconProps = { className: "h-5 w-5 text-muted-foreground" };
 
   // Check if this is a Notion activity
-  if (activityType.startsWith("page_") || activityType.startsWith("database_")) {
+  if (
+    activityType.startsWith("page_") ||
+    activityType.startsWith("database_")
+  ) {
     const notionMetadata = metadata as NotionActivityMetadata | undefined;
 
     if (activityType.startsWith("database_")) {
-      return <DatabaseIcon {...iconProps} className="h-5 w-5 text-purple-500" />;
+      return (
+        <DatabaseIcon {...iconProps} className="h-5 w-5 text-purple-500" />
+      );
     } else if (notionMetadata?.parent_type === "workspace") {
       return <FileTextIcon {...iconProps} className="h-5 w-5 text-blue-500" />;
     } else {
@@ -141,7 +146,9 @@ export function ActivityCard({ activity }: ActivityCardProps) {
   const notionLocationBadge = isNotionActivity
     ? getNotionLocationBadge(activity.metadata)
     : null;
-  const notionMetadata = (isNotionActivity ? activity.metadata : null) as NotionActivityMetadata | null;
+  const notionMetadata = (
+    isNotionActivity ? activity.metadata : null
+  ) as NotionActivityMetadata | null;
 
   return (
     <Card className="hover:bg-accent/50 transition-colors">
@@ -215,7 +222,9 @@ export function ActivityCard({ activity }: ActivityCardProps) {
             {isNotionActivity && notionMetadata && (
               <>
                 <span className="capitalize">
-                  {notionMetadata.object_type === "database" ? "Database" : "Page"}
+                  {notionMetadata.object_type === "database"
+                    ? "Database"
+                    : "Page"}
                 </span>
                 <span>·</span>
               </>
@@ -232,7 +241,9 @@ export function ActivityCard({ activity }: ActivityCardProps) {
                 href={activity.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label={isNotionActivity ? "View in Notion" : "View on GitHub"}
+                aria-label={
+                  isNotionActivity ? "View in Notion" : "View on GitHub"
+                }
               >
                 <ExternalLinkIcon className="h-4 w-4" />
               </a>

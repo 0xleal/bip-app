@@ -12,10 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { RefreshCwIcon } from "lucide-react";
 import { ActivityTimeline } from "./activity-timeline";
-import {
-  getNotionActivities,
-  syncNotionActivity,
-} from "@/app/actions/notion";
+import { getNotionActivities, syncNotionActivity } from "@/app/actions/notion";
 import type { DateRange } from "@/lib/github/types";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
@@ -112,7 +109,9 @@ export function NotionActivitySection({
         setActivities([]);
       } else if (result.activities) {
         // Map activities to include repo_name field (null for Notion activities)
-        setActivities(result.activities.map(a => ({ ...a, repo_name: null })));
+        setActivities(
+          result.activities.map((a) => ({ ...a, repo_name: null })),
+        );
 
         // Get the most recent synced_at timestamp
         if (result.activities.length > 0) {

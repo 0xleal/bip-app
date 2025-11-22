@@ -18,7 +18,7 @@ interface GitHubTokenResponse {
  * @returns New access token and refresh token
  */
 export async function refreshGitHubAccessToken(
-  refreshToken: string
+  refreshToken: string,
 ): Promise<GitHubTokenResponse> {
   const clientId = process.env.GITHUB_CLIENT_ID!;
   const clientSecret = process.env.GITHUB_CLIENT_SECRET!;
@@ -46,7 +46,7 @@ export async function refreshGitHubAccessToken(
 
   if (data.error) {
     throw new Error(
-      `GitHub token refresh error: ${data.error_description || data.error}`
+      `GitHub token refresh error: ${data.error_description || data.error}`,
     );
   }
 

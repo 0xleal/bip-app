@@ -38,7 +38,7 @@ export interface GetContentHistoryResult {
 export async function generateContentAction(
   dateRange: string,
   startDate?: string,
-  endDate?: string
+  endDate?: string,
 ): Promise<GenerateContentResult> {
   try {
     // Get authenticated user
@@ -120,7 +120,10 @@ export async function generateContentAction(
     const activities = [
       ...(githubActivities || []),
       ...(notionActivities || []),
-    ].sort((a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime());
+    ].sort(
+      (a, b) =>
+        new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime(),
+    );
 
     // Fetch manual notes from database
     const { data: notes, error: notesError } = await supabaseAdmin

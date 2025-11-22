@@ -32,7 +32,7 @@ export function ContentGenerationSection({
 }: ContentGenerationSectionProps) {
   const [usage, setUsage] = useState<RateLimitUsage | null>(null);
   const [suggestions, setSuggestions] = useState<ContentSuggestion[] | null>(
-    null
+    null,
   );
   const [loading, setLoading] = useState(false);
   const [loadingQuota, setLoadingQuota] = useState(true);
@@ -148,8 +148,8 @@ export function ContentGenerationSection({
                   {dateRange === "24h"
                     ? "last 24 hours"
                     : dateRange === "7d"
-                    ? "last 7 days"
-                    : "last 30 days"}
+                      ? "last 7 days"
+                      : "last 30 days"}
                 </p>
               </div>
 

@@ -74,13 +74,13 @@ function NotionProvider(options: {
       async request(context) {
         // Notion requires Basic auth with base64-encoded client_id:client_secret
         const credentials = Buffer.from(
-          `${options.clientId}:${options.clientSecret}`
+          `${options.clientId}:${options.clientSecret}`,
         ).toString("base64");
 
         const response = await fetch("https://api.notion.com/v1/oauth/token", {
           method: "POST",
           headers: {
-            "Authorization": `Basic ${credentials}`,
+            Authorization: `Basic ${credentials}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
@@ -100,7 +100,7 @@ function NotionProvider(options: {
             error: data,
           });
           throw new Error(
-            `Notion token exchange failed: ${JSON.stringify(data)}`
+            `Notion token exchange failed: ${JSON.stringify(data)}`,
           );
         }
 
@@ -304,7 +304,10 @@ export const authOptions: NextAuthOptions = {
               .eq("id", existingUser.id);
 
             if (error) {
-              console.error("Error updating user with Notion credentials:", error);
+              console.error(
+                "Error updating user with Notion credentials:",
+                error,
+              );
               return false;
             }
 
@@ -345,7 +348,9 @@ export const authOptions: NextAuthOptions = {
         // Get user ID and Notion credentials from database
         const { data: userData } = await supabaseAdmin
           .from("users")
-          .select("id, notion_access_token, notion_workspace_user_id, notion_bot_id, notion_workspace_id")
+          .select(
+            "id, notion_access_token, notion_workspace_user_id, notion_bot_id, notion_workspace_id",
+          )
           .eq("github_id", token.github_id)
           .single();
 
@@ -355,7 +360,8 @@ export const authOptions: NextAuthOptions = {
           // Restore Notion credentials if they exist
           if (userData.notion_access_token) {
             token.notionAccessToken = userData.notion_access_token;
-            token.notionWorkspaceUserId = userData.notion_workspace_user_id || undefined;
+            token.notionWorkspaceUserId =
+              userData.notion_workspace_user_id || undefined;
             token.notionBotId = userData.notion_bot_id || undefined;
             token.notionWorkspaceId = userData.notion_workspace_id || undefined;
           }
@@ -395,7 +401,10 @@ export const authOptions: NextAuthOptions = {
             .eq("id", token.id as string);
 
           if (updateError) {
-            console.error("Error updating user with Notion credentials:", updateError);
+            console.error(
+              "Error updating user with Notion credentials:",
+              updateError,
+            );
           }
         } else {
           // No existing session token - need to find the user somehow
@@ -426,11 +435,11 @@ export const authOptions: NextAuthOptions = {
         if (shouldRefresh) {
           try {
             const refreshedTokens = await refreshGitHubAccessToken(
-              token.refreshToken as string
+              token.refreshToken as string,
             );
 
             const newTokenExpiresAt = calculateTokenExpiration(
-              refreshedTokens.expires_in
+              refreshedTokens.expires_in,
             );
 
             // Update tokens in database

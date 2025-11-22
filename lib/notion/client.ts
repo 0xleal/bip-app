@@ -32,7 +32,7 @@ export function createNotionClient(accessToken: string): Client {
  * Type guard to check if block is a full block (not partial)
  */
 function isFullBlock(
-  block: BlockObjectResponse | PartialBlockObjectResponse
+  block: BlockObjectResponse | PartialBlockObjectResponse,
 ): block is BlockObjectResponse {
   return "type" in block;
 }
@@ -40,7 +40,9 @@ function isFullBlock(
 /**
  * Extract plain text from a rich text array
  */
-function extractPlainTextFromRichText(richText: Array<{ plain_text: string }>): string {
+function extractPlainTextFromRichText(
+  richText: Array<{ plain_text: string }>,
+): string {
   return richText.map((item) => item.plain_text).join("");
 }
 
@@ -81,7 +83,9 @@ function extractPlainTextFromBlock(block: BlockObjectResponse): string {
     case "equation":
       return block.equation.expression;
     case "table_row":
-      return block.table_row.cells.map(cell => extractPlainTextFromRichText(cell)).join(" | ");
+      return block.table_row.cells
+        .map((cell) => extractPlainTextFromRichText(cell))
+        .join(" | ");
     default:
       // Blocks without text content (divider, breadcrumb, etc.)
       return "";
@@ -98,7 +102,7 @@ function extractPlainTextFromBlock(block: BlockObjectResponse): string {
  */
 export async function fetchPageContent(
   pageId: string,
-  accessToken: string
+  accessToken: string,
 ): Promise<string> {
   const notion = createNotionClient(accessToken);
   const textParts: string[] = [];

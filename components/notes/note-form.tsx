@@ -75,8 +75,8 @@ export function NoteForm({ onNoteCreated }: NoteFormProps) {
               isOverLimit
                 ? "text-destructive font-medium"
                 : isNearLimit
-                ? "text-orange-500"
-                : "text-muted-foreground"
+                  ? "text-orange-500"
+                  : "text-muted-foreground"
             }`}
           >
             {characterCount} / {maxCharacters} characters

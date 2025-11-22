@@ -20,7 +20,7 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
  */
 export const supabaseAdmin = createClient<Database>(
   supabaseUrl,
-  supabaseServiceRoleKey
+  supabaseServiceRoleKey,
 );
 
 /**

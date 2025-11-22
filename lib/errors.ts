@@ -2,7 +2,7 @@ export class AppError extends Error {
   constructor(
     message: string,
     public code?: string,
-    public statusCode: number = 500
+    public statusCode: number = 500,
   ) {
     super(message);
     this.name = "AppError";
@@ -31,7 +31,10 @@ export class NotFoundError extends AppError {
 }
 
 export class RateLimitError extends AppError {
-  constructor(message: string = "Rate limit exceeded", public resetAt?: Date) {
+  constructor(
+    message: string = "Rate limit exceeded",
+    public resetAt?: Date,
+  ) {
     super(message, "RATE_LIMIT_ERROR", 429);
     this.name = "RateLimitError";
   }
@@ -54,7 +57,7 @@ export function logError(error: unknown, context?: Record<string, unknown>) {
         ...(error instanceof Error && { stack: error.stack }),
         ...context,
         timestamp: new Date().toISOString(),
-      })
+      }),
     );
   }
 }

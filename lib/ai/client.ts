@@ -38,20 +38,20 @@ export interface GenerateContentInput {
  * @returns Generated content suggestions with metadata
  */
 export async function generateContent(
-  input: GenerateContentInput
+  input: GenerateContentInput,
 ): Promise<GeneratedContent> {
   try {
     // Apply smart truncation to manage token costs
     const { activities, notes, truncated } = truncateInput(
       input.activities,
-      input.notes
+      input.notes,
     );
 
     if (truncated) {
       console.log(
         `Input truncated: ${input.activities.length + input.notes.length} → ${
           activities.length + notes.length
-        } items`
+        } items`,
       );
     }
 
@@ -78,7 +78,7 @@ export async function generateContent(
     const outputTokens = response.usage.output_tokens;
 
     console.log(
-      `API usage - Input: ${inputTokens}, Output: ${outputTokens} tokens`
+      `API usage - Input: ${inputTokens}, Output: ${outputTokens} tokens`,
     );
 
     // Parse the response
@@ -131,7 +131,7 @@ export async function generateContent(
     if (error instanceof Anthropic.APIError) {
       if (error.status === 429) {
         throw new Error(
-          "Anthropic API rate limit exceeded. Please try again later."
+          "Anthropic API rate limit exceeded. Please try again later.",
         );
       }
       if (error.status === 401) {

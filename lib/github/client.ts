@@ -23,7 +23,7 @@ export function createGitHubClient(accessToken: string): Octokit {
  * @returns Rate limit info
  */
 export function extractRateLimitInfo(
-  headers: Record<string, string | undefined>
+  headers: Record<string, string | undefined>,
 ) {
   const remaining = parseInt(headers["x-ratelimit-remaining"] || "0", 10);
   const resetTimestamp = headers["x-ratelimit-reset"];

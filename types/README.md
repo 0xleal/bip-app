@@ -21,10 +21,10 @@ This ensures your TypeScript code stays in sync with the actual database schema.
 Import types from `@/types/supabase`:
 
 ```typescript
-import type { Database } from '@/types/supabase';
+import type { Database } from "@/types/supabase";
 
 // Access table types
-type User = Database['public']['Tables']['users']['Row'];
-type UserInsert = Database['public']['Tables']['users']['Insert'];
-type UserUpdate = Database['public']['Tables']['users']['Update'];
+type User = Database["public"]["Tables"]["users"]["Row"];
+type UserInsert = Database["public"]["Tables"]["users"]["Insert"];
+type UserUpdate = Database["public"]["Tables"]["users"]["Update"];
 ```

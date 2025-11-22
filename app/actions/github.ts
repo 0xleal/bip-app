@@ -16,7 +16,7 @@ import type {
  */
 function calculateDateThreshold(
   dateRange: DateRange,
-  customStartDate?: string
+  customStartDate?: string,
 ): string {
   if (dateRange === "custom" && customStartDate) {
     return customStartDate;
@@ -41,7 +41,7 @@ function calculateDateThreshold(
  * Supports date range filtering and activity type filtering
  */
 export async function getGitHubActivities(
-  options: GetActivitiesOptions = {}
+  options: GetActivitiesOptions = {},
 ): Promise<GetActivitiesResult> {
   try {
     const session = await getCurrentSession();
@@ -118,12 +118,12 @@ export async function syncGitHubActivity(): Promise<SyncResult> {
       {
         username: session.user.github_username,
         per_page: 100,
-      }
+      },
     );
 
     const events = response.data;
     let rateLimitInfo = extractRateLimitInfo(
-      response.headers as Record<string, string>
+      response.headers as Record<string, string>,
     );
 
     // Fetch actual commits using Commits API (more reliable for commit details)
@@ -150,7 +150,7 @@ export async function syncGitHubActivity(): Promise<SyncResult> {
 
         // Update rate limit info with the most recent response
         rateLimitInfo = extractRateLimitInfo(
-          commitsResponse.headers as Record<string, string>
+          commitsResponse.headers as Record<string, string>,
         );
       } catch (error) {
         console.error(`Failed to fetch commits for ${repoFullName}:`, error);
@@ -162,7 +162,7 @@ export async function syncGitHubActivity(): Promise<SyncResult> {
     const activities = transformEventsToActivities(
       events,
       session.user.id,
-      reposWithCommits
+      reposWithCommits,
     );
 
     // Upsert activities to database with deduplication
@@ -249,7 +249,7 @@ export async function syncGitHubActivity(): Promise<SyncResult> {
 
       if (apiError.status === 403) {
         const rateLimitInfo = extractRateLimitInfo(
-          (apiError.response?.headers || {}) as Record<string, string>
+          (apiError.response?.headers || {}) as Record<string, string>,
         );
         return {
           success: false,

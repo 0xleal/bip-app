@@ -1,8 +1,4 @@
-import type {
-  NotionPage,
-  NotionDatabase,
-  NotionActivityInsert,
-} from "./types";
+import type { NotionPage, NotionDatabase, NotionActivityInsert } from "./types";
 
 /**
  * Extract title from Notion page properties
@@ -46,7 +42,7 @@ function extractDatabaseTitle(database: NotionDatabase): string {
 function determineActivityType(
   createdTime: string,
   lastEditedTime: string,
-  objectType: "page" | "database"
+  objectType: "page" | "database",
 ): string {
   const created = new Date(createdTime);
   const edited = new Date(lastEditedTime);
@@ -67,14 +63,14 @@ function determineActivityType(
  */
 export function transformPageToActivity(
   page: NotionPage,
-  userId: string
+  userId: string,
 ): NotionActivityInsert | null {
   try {
     const title = extractPageTitle(page.properties);
     const activityType = determineActivityType(
       page.created_time,
       page.last_edited_time,
-      "page"
+      "page",
     );
 
     // Determine parent type and ID
@@ -121,14 +117,14 @@ export function transformPageToActivity(
  */
 export function transformDatabaseToActivity(
   database: NotionDatabase,
-  userId: string
+  userId: string,
 ): NotionActivityInsert | null {
   try {
     const title = extractDatabaseTitle(database);
     const activityType = determineActivityType(
       database.created_time,
       database.last_edited_time,
-      "database"
+      "database",
     );
 
     // Determine parent type and ID
@@ -176,7 +172,7 @@ export function transformSearchResultsToActivities(
   results: Array<NotionPage | NotionDatabase>,
   userId: string,
   workspaceUserId: string,
-  dateThreshold: Date
+  dateThreshold: Date,
 ): NotionActivityInsert[] {
   const activities: NotionActivityInsert[] = [];
 

@@ -35,7 +35,7 @@ function getPeriodBounds() {
  */
 export async function checkRateLimit(
   userId: string,
-  config: RateLimitConfig = DEFAULT_RATE_LIMITS
+  config: RateLimitConfig = DEFAULT_RATE_LIMITS,
 ): Promise<RateLimitCheck> {
   const now = new Date();
   const { dailyStart, dailyEnd, weeklyStart, weeklyEnd } = getPeriodBounds();
@@ -72,7 +72,7 @@ export async function checkRateLimit(
     const weeklyCount =
       weeklyUsageRecords?.reduce(
         (sum, record) => sum + record.generation_count,
-        0
+        0,
       ) || 0;
 
     const usage: RateLimitUsage = {
@@ -102,7 +102,7 @@ export async function checkRateLimit(
         reason: `Weekly limit of ${
           config.weeklyLimit
         } generations exceeded. Resets in ${Math.ceil(
-          (weeklyEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+          (weeklyEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
         )} days.`,
       };
     }
@@ -188,7 +188,7 @@ export async function incrementUsage(userId: string): Promise<void> {
  */
 export async function getUserUsage(
   userId: string,
-  config: RateLimitConfig = DEFAULT_RATE_LIMITS
+  config: RateLimitConfig = DEFAULT_RATE_LIMITS,
 ): Promise<RateLimitUsage> {
   const { dailyStart, dailyEnd, weeklyStart } = getPeriodBounds();
   const now = new Date();
@@ -224,7 +224,7 @@ export async function getUserUsage(
     const weeklyCount =
       weeklyUsageRecords?.reduce(
         (sum, record) => sum + record.generation_count,
-        0
+        0,
       ) || 0;
 
     return {

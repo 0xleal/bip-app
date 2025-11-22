@@ -71,7 +71,7 @@ export function formatUserInput(
     content: string;
     timestamp: string;
   }>,
-  dateRange: string
+  dateRange: string,
 ): string {
   let prompt = `Here's what I've been working on (${dateRange}):\n\n`;
 
@@ -86,7 +86,7 @@ export function formatUserInput(
         prompt += `   Repository: ${activity.repo}\n`;
       }
       prompt += `   Time: ${new Date(
-        activity.timestamp
+        activity.timestamp,
       ).toLocaleDateString()}\n\n`;
     });
   }
@@ -125,7 +125,7 @@ export function truncateInput(
     content: string;
     timestamp: string;
   }>,
-  maxItems = 50
+  maxItems = 50,
 ): {
   activities: typeof activities;
   notes: typeof notes;
@@ -145,14 +145,14 @@ export function truncateInput(
   const truncatedActivities = activities
     .sort(
       (a, b) =>
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
     )
     .slice(0, maxActivities);
 
   const truncatedNotes = notes
     .sort(
       (a, b) =>
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
     )
     .slice(0, maxNotes);
 
