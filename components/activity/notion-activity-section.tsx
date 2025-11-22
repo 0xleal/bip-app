@@ -149,8 +149,22 @@ export function NotionActivitySection({
       const result = await syncNotionActivity();
 
       if (result.success) {
+        const newCount = result.newItemsCount || 0;
+        const updatedCount = result.updatedItemsCount || 0;
+
+        let description = "";
+        if (newCount > 0 && updatedCount > 0) {
+          description = `Added ${newCount} new, updated ${updatedCount} existing`;
+        } else if (newCount > 0) {
+          description = `Added ${newCount} new activities`;
+        } else if (updatedCount > 0) {
+          description = `Updated ${updatedCount} activities`;
+        } else {
+          description = "Everything is up to date";
+        }
+
         toast.success("Synced successfully", {
-          description: `Added ${result.newItemsCount} new activities`,
+          description,
         });
 
         // Reload activities from database after successful sync

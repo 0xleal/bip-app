@@ -95,6 +95,7 @@ export async function syncNotionActivity(): Promise<SyncNotionResult> {
       return {
         success: false,
         newItemsCount: 0,
+        updatedItemsCount: 0,
         totalItems: 0,
         lastSyncedAt: new Date().toISOString(),
         error: "Unauthorized - please connect your Notion account",
@@ -120,6 +121,7 @@ export async function syncNotionActivity(): Promise<SyncNotionResult> {
           return {
             success: false,
             newItemsCount: 0,
+            updatedItemsCount: 0,
             totalItems: 0,
             lastSyncedAt: new Date().toISOString(),
             error: `Rate limited - retry after ${retryAfter} seconds`,
@@ -129,6 +131,7 @@ export async function syncNotionActivity(): Promise<SyncNotionResult> {
         return {
           success: false,
           newItemsCount: 0,
+          updatedItemsCount: 0,
           totalItems: 0,
           lastSyncedAt: new Date().toISOString(),
           error: "Failed to fetch user info from Notion",
@@ -178,6 +181,7 @@ export async function syncNotionActivity(): Promise<SyncNotionResult> {
           return {
             success: false,
             newItemsCount: 0,
+            updatedItemsCount: 0,
             totalItems: 0,
             lastSyncedAt: new Date().toISOString(),
             error: "Rate limit exceeded - please try again later",
@@ -198,6 +202,7 @@ export async function syncNotionActivity(): Promise<SyncNotionResult> {
         return {
           success: false,
           newItemsCount: 0,
+          updatedItemsCount: 0,
           totalItems: 0,
           lastSyncedAt: new Date().toISOString(),
           error: "Failed to search Notion pages",
@@ -231,8 +236,65 @@ export async function syncNotionActivity(): Promise<SyncNotionResult> {
       dateThreshold
     );
 
-    // Step 5: Upsert activities to database with deduplication
+    // Step 5: First, clean up any existing duplicates before upserting
+    // This handles cases where duplicates were created before the fix
+    const { data: existingActivities } = await supabaseAdmin
+      .from("notion_activities")
+      .select("id, metadata, occurred_at, created_at")
+      .eq("user_id", userId)
+      .order("occurred_at", { ascending: false });
+
+    if (existingActivities && existingActivities.length > 0) {
+      const pageGroups = new Map<string, typeof existingActivities>();
+
+      for (const activity of existingActivities) {
+        const metadata = activity.metadata as { notion_page_id?: string };
+        const pageId = metadata?.notion_page_id;
+
+        if (!pageId) continue;
+
+        if (!pageGroups.has(pageId)) {
+          pageGroups.set(pageId, []);
+        }
+        pageGroups.get(pageId)!.push(activity);
+      }
+
+      const idsToDelete: string[] = [];
+
+      for (const group of pageGroups.values()) {
+        if (group.length > 1) {
+          // Sort by occurred_at DESC, then created_at DESC
+          group.sort((a, b) => {
+            const timeCompare =
+              new Date(b.occurred_at).getTime() -
+              new Date(a.occurred_at).getTime();
+            if (timeCompare !== 0) return timeCompare;
+
+            return (
+              new Date(b.created_at || 0).getTime() -
+              new Date(a.created_at || 0).getTime()
+            );
+          });
+
+          // Keep the first one (most recent), delete the rest
+          for (let i = 1; i < group.length; i++) {
+            idsToDelete.push(group[i].id);
+          }
+        }
+      }
+
+      if (idsToDelete.length > 0) {
+        await supabaseAdmin
+          .from("notion_activities")
+          .delete()
+          .in("id", idsToDelete);
+      }
+    }
+
+    // Step 6: Upsert activities to database with deduplication
+    // Keep only one entry per page, update with latest timestamp
     let newCount = 0;
+    let updatedCount = 0;
     const errors: string[] = [];
 
     for (const activity of activities) {
@@ -244,13 +306,12 @@ export async function syncNotionActivity(): Promise<SyncNotionResult> {
           continue;
         }
 
-        // Check if activity already exists based on page_id and occurred_at
+        // Check if activity already exists for this page (regardless of timestamp)
         const { data: existing } = await supabaseAdmin
           .from("notion_activities")
-          .select("id")
+          .select("id, occurred_at")
           .eq("user_id", activity.user_id || "")
           .eq("metadata->>notion_page_id", notionPageId)
-          .eq("occurred_at", activity.occurred_at)
           .maybeSingle();
 
         if (!existing) {
@@ -266,14 +327,24 @@ export async function syncNotionActivity(): Promise<SyncNotionResult> {
             newCount++;
           }
         } else {
-          // Update synced_at for existing activity
+          // Update existing activity with latest data
           const { error: updateError } = await supabaseAdmin
             .from("notion_activities")
-            .update({ synced_at: new Date().toISOString() })
+            .update({
+              title: activity.title,
+              description: activity.description,
+              url: activity.url,
+              activity_type: activity.activity_type,
+              occurred_at: activity.occurred_at,
+              metadata: activity.metadata,
+              synced_at: new Date().toISOString(),
+            })
             .eq("id", existing.id);
 
           if (updateError) {
             console.error("Error updating Notion activity:", updateError);
+          } else {
+            updatedCount++;
           }
         }
       } catch (activityError) {
@@ -285,6 +356,7 @@ export async function syncNotionActivity(): Promise<SyncNotionResult> {
     return {
       success: true,
       newItemsCount: newCount,
+      updatedItemsCount: updatedCount,
       totalItems: activities.length,
       lastSyncedAt: new Date().toISOString(),
       error: errors.length > 0 ? errors.join(", ") : undefined,
@@ -295,6 +367,7 @@ export async function syncNotionActivity(): Promise<SyncNotionResult> {
     return {
       success: false,
       newItemsCount: 0,
+      updatedItemsCount: 0,
       totalItems: 0,
       lastSyncedAt: new Date().toISOString(),
       error: "Failed to sync Notion activities",
