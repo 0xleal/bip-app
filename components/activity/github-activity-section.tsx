@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ActivityTimeline } from './activity-timeline';
 import { ActivityFilters } from './activity-filters';
-import { getGitHubActivities } from '@/app/actions/github';
+import { getGitHubActivities, syncGitHubActivity } from '@/app/actions/github';
 import type { DateRange, GitHubActivity } from '@/lib/github/types';
+import { toast } from 'sonner';
 
 function ActivitySkeleton() {
   return (
@@ -31,10 +32,14 @@ export function GitHubActivitySection() {
   const [activities, setActivities] = useState<GitHubActivity[]>([]);
   const [dateRange, setDateRange] = useState<DateRange>('7d');
   const [loading, setLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [lastSynced, setLastSynced] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const loadActivities = async () => {
+  // Track if we've already attempted auto-sync to prevent multiple triggers
+  const hasAttemptedAutoSync = useRef(false);
+
+  const loadActivities = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -69,16 +74,70 @@ export function GitHubActivitySection() {
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    loadActivities();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateRange]);
 
-  const handleSyncComplete = () => {
+  // Handle manual or auto sync
+  const handleSync = useCallback(async () => {
+    if (isSyncing) {
+      // Prevent duplicate syncs
+      return;
+    }
+
+    setIsSyncing(true);
+
+    try {
+      const result = await syncGitHubActivity();
+
+      if (result.success) {
+        toast.success('Synced successfully', {
+          description: `Added ${result.newItemsCount} new activities`,
+        });
+
+        // Check for rate limit warning
+        if (result.rateLimitRemaining < 100) {
+          toast.warning('Rate limit warning', {
+            description: `Only ${result.rateLimitRemaining} requests remaining`,
+          });
+        }
+
+        // Reload activities from database after successful sync
+        await loadActivities();
+      } else {
+        toast.error('Sync failed', {
+          description: result.error || 'Failed to sync activities',
+        });
+      }
+    } catch (error) {
+      console.error('Error syncing:', error);
+      toast.error('Sync failed', {
+        description: 'An unexpected error occurred',
+      });
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [isSyncing, loadActivities]);
+
+  // Load activities on mount and when date range changes
+  useEffect(() => {
     loadActivities();
-  };
+  }, [loadActivities]);
+
+  // Auto-sync on first load if database is empty
+  useEffect(() => {
+    // Only attempt auto-sync once, after initial load completes
+    if (
+      !loading &&
+      !isSyncing &&
+      !hasAttemptedAutoSync.current &&
+      activities.length === 0 &&
+      !error
+    ) {
+      hasAttemptedAutoSync.current = true;
+
+      // Trigger auto-sync in background
+      handleSync();
+    }
+  }, [loading, isSyncing, activities.length, error, handleSync]);
 
   return (
     <section>
@@ -98,7 +157,8 @@ export function GitHubActivitySection() {
             dateRange={dateRange}
             onDateRangeChange={setDateRange}
             lastSynced={lastSynced}
-            onSyncComplete={handleSyncComplete}
+            isSyncing={isSyncing}
+            onSync={handleSync}
           />
 
           {error && (

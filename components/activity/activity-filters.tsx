@@ -1,11 +1,8 @@
 'use client';
 
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { RefreshCwIcon, AlertCircleIcon } from 'lucide-react';
-import { syncGitHubActivity } from '@/app/actions/github';
+import { RefreshCwIcon } from 'lucide-react';
 import type { DateRange } from '@/lib/github/types';
-import { toast } from 'sonner';
 
 /**
  * Format timestamp to relative time for "Last synced" display
@@ -30,56 +27,17 @@ interface ActivityFiltersProps {
   dateRange: DateRange;
   onDateRangeChange: (range: DateRange) => void;
   lastSynced?: string | null;
-  onSyncComplete?: () => void;
+  isSyncing: boolean;
+  onSync: () => void;
 }
 
 export function ActivityFilters({
   dateRange,
   onDateRangeChange,
   lastSynced,
-  onSyncComplete,
+  isSyncing,
+  onSync,
 }: ActivityFiltersProps) {
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [rateLimitWarning, setRateLimitWarning] = useState(false);
-
-  const handleSync = async () => {
-    setIsSyncing(true);
-    setRateLimitWarning(false);
-
-    try {
-      const result = await syncGitHubActivity();
-
-      if (result.success) {
-        toast.success('Synced successfully', {
-          description: `Added ${result.newItemsCount} new activities`,
-        });
-
-        // Check for rate limit warning
-        if (result.rateLimitRemaining < 100) {
-          setRateLimitWarning(true);
-          toast.warning('Rate limit warning', {
-            description: `Only ${result.rateLimitRemaining} requests remaining`,
-          });
-        }
-
-        // Notify parent to refresh data
-        if (onSyncComplete) {
-          onSyncComplete();
-        }
-      } else {
-        toast.error('Sync failed', {
-          description: result.error || 'Failed to sync activities',
-        });
-      }
-    } catch (error) {
-      console.error('Error syncing:', error);
-      toast.error('Sync failed', {
-        description: 'An unexpected error occurred',
-      });
-    } finally {
-      setIsSyncing(false);
-    }
-  };
 
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
@@ -108,21 +66,14 @@ export function ActivityFilters({
       </div>
 
       <div className="flex items-center gap-4">
-        {lastSynced && (
+        {lastSynced && !isSyncing && (
           <span className="text-sm text-muted-foreground">
             Last synced: {formatTimeAgo(lastSynced)}
           </span>
         )}
 
-        {rateLimitWarning && (
-          <div className="flex items-center gap-1 text-amber-600 dark:text-amber-500">
-            <AlertCircleIcon className="h-4 w-4" />
-            <span className="text-xs">Rate limit low</span>
-          </div>
-        )}
-
         <Button
-          onClick={handleSync}
+          onClick={onSync}
           disabled={isSyncing}
           size="sm"
           variant="outline"
