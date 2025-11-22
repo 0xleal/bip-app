@@ -2,20 +2,20 @@
 
 import { getCurrentSession } from "@/lib/auth/session";
 import { supabaseAdmin } from "@/lib/supabase/client";
-import {
-  notionPost,
-  notionGet,
-  extractNotionRateLimitInfo,
-  waitForRateLimit,
-} from "@/lib/notion/client";
+import { createNotionClient, fetchPageContent } from "@/lib/notion/client";
 import { transformSearchResultsToActivities } from "@/lib/notion/transformers";
 import type {
-  NotionSearchResponse,
-  NotionMeResponse,
   SyncNotionResult,
   GetNotionActivitiesOptions,
   GetNotionActivitiesResult,
+  NotionPage,
+  NotionDatabase,
 } from "@/lib/notion/types";
+import { isFullPage, isFullDatabase } from "@notionhq/client";
+import type {
+  PageObjectResponse,
+  DatabaseObjectResponse,
+} from "@notionhq/client/build/src/api-endpoints";
 
 /**
  * Calculate date threshold for date range filtering
@@ -104,6 +104,7 @@ export async function syncNotionActivity(): Promise<SyncNotionResult> {
 
     const accessToken = session.notionAccessToken;
     const userId = session.user.id;
+    const notion = createNotionClient(accessToken);
 
     // Step 1: Get authenticated user's workspace user ID
     let workspaceUserId: string;
@@ -112,22 +113,23 @@ export async function syncNotionActivity(): Promise<SyncNotionResult> {
     if (session.notionWorkspaceUserId) {
       workspaceUserId = session.notionWorkspaceUserId;
     } else {
-      // Fetch from Notion API
-      const meResponse = await notionGet("/users/me", accessToken);
-
-      if (!meResponse.ok) {
-        const retryAfter = extractNotionRateLimitInfo(meResponse.headers);
-        if (retryAfter) {
+      // Fetch from Notion API using SDK
+      try {
+        const meData = await notion.users.me({});
+        if (meData.type === "bot" && meData.bot.owner.type === "user") {
+          workspaceUserId = meData.bot.owner.user.id;
+        } else {
           return {
             success: false,
             newItemsCount: 0,
             updatedItemsCount: 0,
             totalItems: 0,
             lastSyncedAt: new Date().toISOString(),
-            error: `Rate limited - retry after ${retryAfter} seconds`,
+            error: "Failed to get workspace user ID from Notion",
           };
         }
-
+      } catch (error) {
+        console.error("Error fetching user info from Notion:", error);
         return {
           success: false,
           newItemsCount: 0,
@@ -137,9 +139,6 @@ export async function syncNotionActivity(): Promise<SyncNotionResult> {
           error: "Failed to fetch user info from Notion",
         };
       }
-
-      const meData: NotionMeResponse = await meResponse.json();
-      workspaceUserId = meData.bot.owner.user.id;
     }
 
     // Step 2: Calculate date threshold (last 30 days)
@@ -147,85 +146,58 @@ export async function syncNotionActivity(): Promise<SyncNotionResult> {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     const dateThreshold = thirtyDaysAgo;
 
-    // Step 3: Search for all pages and databases, sorted by last_edited_time
-    const allResults: Array<NotionSearchResponse["results"][0]> = [];
-    let hasMore = true;
-    let startCursor: string | undefined = undefined;
-    let consecutiveRateLimits = 0;
-    const MAX_RATE_LIMIT_RETRIES = 3;
+    // Step 3: Search for all pages and databases using SDK
+    const allResults: Array<NotionPage | NotionDatabase> = [];
 
-    while (hasMore) {
-      const searchBody: {
-        sort: { direction: string; timestamp: string };
-        page_size: number;
-        start_cursor?: string;
-      } = {
-        sort: {
-          direction: "descending",
-          timestamp: "last_edited_time",
-        },
-        page_size: 100,
+    try {
+      let hasMore = true;
+      let startCursor: string | undefined = undefined;
+
+      while (hasMore) {
+        const searchResponse = await notion.search({
+          sort: {
+            direction: "descending",
+            timestamp: "last_edited_time",
+          },
+          page_size: 100,
+          start_cursor: startCursor,
+        });
+
+        // Filter and convert SDK types to our internal types
+        for (const result of searchResponse.results) {
+          if (isFullPage(result)) {
+            allResults.push(result as unknown as NotionPage);
+          } else if (isFullDatabase(result)) {
+            allResults.push(result as unknown as NotionDatabase);
+          }
+        }
+
+        // Check if we've gone past our date threshold (optimization)
+        if (searchResponse.results.length > 0) {
+          const oldestItem = searchResponse.results[searchResponse.results.length - 1];
+
+          if ((isFullPage(oldestItem) || isFullDatabase(oldestItem))) {
+            const oldestTime = new Date(oldestItem.last_edited_time);
+            if (oldestTime < dateThreshold) {
+              // We've gone past 30 days, stop paginating
+              break;
+            }
+          }
+        }
+
+        hasMore = searchResponse.has_more;
+        startCursor = searchResponse.next_cursor || undefined;
+      }
+    } catch (error) {
+      console.error("Error searching Notion pages:", error);
+      return {
+        success: false,
+        newItemsCount: 0,
+        updatedItemsCount: 0,
+        totalItems: 0,
+        lastSyncedAt: new Date().toISOString(),
+        error: "Failed to search Notion pages",
       };
-
-      if (startCursor) {
-        searchBody.start_cursor = startCursor;
-      }
-
-      const searchResponse = await notionPost("/search", accessToken, searchBody);
-
-      // Handle rate limiting
-      if (searchResponse.status === 429) {
-        const retryAfter = extractNotionRateLimitInfo(searchResponse.headers);
-
-        if (consecutiveRateLimits >= MAX_RATE_LIMIT_RETRIES) {
-          return {
-            success: false,
-            newItemsCount: 0,
-            updatedItemsCount: 0,
-            totalItems: 0,
-            lastSyncedAt: new Date().toISOString(),
-            error: "Rate limit exceeded - please try again later",
-          };
-        }
-
-        if (retryAfter) {
-          await waitForRateLimit(retryAfter);
-          consecutiveRateLimits++;
-          continue; // Retry the same request
-        }
-      }
-
-      consecutiveRateLimits = 0; // Reset on successful request
-
-      if (!searchResponse.ok) {
-        console.error("Notion search failed:", searchResponse.status);
-        return {
-          success: false,
-          newItemsCount: 0,
-          updatedItemsCount: 0,
-          totalItems: 0,
-          lastSyncedAt: new Date().toISOString(),
-          error: "Failed to search Notion pages",
-        };
-      }
-
-      const searchData: NotionSearchResponse = await searchResponse.json();
-      allResults.push(...searchData.results);
-
-      // Check if we've gone past our date threshold (optimization)
-      if (searchData.results.length > 0) {
-        const oldestItem =
-          searchData.results[searchData.results.length - 1];
-        const oldestTime = new Date(oldestItem.last_edited_time);
-
-        if (oldestTime < dateThreshold) {
-          // We've gone past 30 days, stop paginating
-          break;
-        }
-      }
-
-      hasMore = searchData.has_more;
-      startCursor = searchData.next_cursor || undefined;
     }
 
     // Step 4: Transform results to activities (with client-side filtering)
@@ -314,11 +286,23 @@ export async function syncNotionActivity(): Promise<SyncNotionResult> {
           .eq("metadata->>notion_page_id", notionPageId)
           .maybeSingle();
 
+        // Fetch page content (plain text)
+        let content: string | null = null;
+        try {
+          content = await fetchPageContent(notionPageId, accessToken);
+        } catch (contentError) {
+          console.error(`Failed to fetch content for page ${notionPageId}:`, contentError);
+          // Continue without content - we still want to save the activity
+        }
+
         if (!existing) {
-          // Insert new activity
+          // Insert new activity with content
           const { error: insertError } = await supabaseAdmin
             .from("notion_activities")
-            .insert(activity);
+            .insert({
+              ...activity,
+              content,
+            });
 
           if (insertError) {
             console.error("Error inserting Notion activity:", insertError);
@@ -327,7 +311,7 @@ export async function syncNotionActivity(): Promise<SyncNotionResult> {
             newCount++;
           }
         } else {
-          // Update existing activity with latest data
+          // Update existing activity with latest data and content
           const { error: updateError } = await supabaseAdmin
             .from("notion_activities")
             .update({
@@ -337,6 +321,7 @@ export async function syncNotionActivity(): Promise<SyncNotionResult> {
               activity_type: activity.activity_type,
               occurred_at: activity.occurred_at,
               metadata: activity.metadata,
+              content,
               synced_at: new Date().toISOString(),
             })
             .eq("id", existing.id);

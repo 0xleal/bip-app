@@ -77,6 +77,7 @@ type NotionActivity = {
   title: string;
   url: string | null;
   user_id: string | null;
+  content: string | null;
 };
 
 export function NotionActivitySection({

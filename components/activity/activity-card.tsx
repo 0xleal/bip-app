@@ -119,7 +119,7 @@ function formatTimeAgo(timestamp: string): string {
 }
 
 interface ActivityCardProps {
-  activity: GitHubActivity;
+  activity: GitHubActivity & { content?: string | null };
 }
 
 export function ActivityCard({ activity }: ActivityCardProps) {
@@ -156,6 +156,13 @@ export function ActivityCard({ activity }: ActivityCardProps) {
           {activity.description && (
             <p className="text-sm text-muted-foreground leading-relaxed mb-2 line-clamp-2">
               {activity.description}
+            </p>
+          )}
+
+          {/* Show Notion page content preview */}
+          {isNotionActivity && activity.content && (
+            <p className="text-sm text-muted-foreground leading-relaxed mt-2 mb-2 line-clamp-3 italic">
+              {activity.content}
             </p>
           )}
 

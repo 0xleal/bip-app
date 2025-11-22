@@ -1,92 +1,135 @@
 /**
  * Notion API client utilities
  *
- * Mirrors the GitHub client pattern but for Notion's API
+ * Uses the official @notionhq/client SDK
  */
 
-const NOTION_API_VERSION = "2022-06-28";
-const NOTION_BASE_URL = "https://api.notion.com/v1";
+import { Client } from "@notionhq/client";
+import type {
+  BlockObjectResponse,
+  PartialBlockObjectResponse,
+} from "@notionhq/client/build/src/api-endpoints";
 
 export interface NotionClientConfig {
   accessToken: string;
 }
 
 /**
- * Create headers for Notion API requests
+ * Create a Notion client instance
  *
  * @param accessToken - Notion OAuth access token
- * @returns Headers object for fetch requests
+ * @returns Notion client instance
  */
-export function createNotionHeaders(accessToken: string): HeadersInit {
+export function createNotionClient(accessToken: string): Client {
   if (!accessToken) {
     throw new Error("Notion access token is required");
   }
 
-  return {
-    Authorization: `Bearer ${accessToken}`,
-    "Notion-Version": NOTION_API_VERSION,
-    "Content-Type": "application/json",
-  };
+  return new Client({ auth: accessToken });
 }
 
 /**
- * Make a GET request to Notion API
+ * Type guard to check if block is a full block (not partial)
  */
-export async function notionGet(
-  endpoint: string,
-  accessToken: string
-): Promise<Response> {
-  const url = `${NOTION_BASE_URL}${endpoint}`;
-  const headers = createNotionHeaders(accessToken);
-
-  return fetch(url, {
-    method: "GET",
-    headers,
-  });
+function isFullBlock(
+  block: BlockObjectResponse | PartialBlockObjectResponse
+): block is BlockObjectResponse {
+  return "type" in block;
 }
 
 /**
- * Make a POST request to Notion API
+ * Extract plain text from a rich text array
  */
-export async function notionPost(
-  endpoint: string,
-  accessToken: string,
-  body?: object
-): Promise<Response> {
-  const url = `${NOTION_BASE_URL}${endpoint}`;
-  const headers = createNotionHeaders(accessToken);
-
-  return fetch(url, {
-    method: "POST",
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  });
+function extractPlainTextFromRichText(richText: Array<{ plain_text: string }>): string {
+  return richText.map((item) => item.plain_text).join("");
 }
 
 /**
- * Extract rate limit information from Notion API response headers
+ * Extract plain text from a block based on its type
+ */
+function extractPlainTextFromBlock(block: BlockObjectResponse): string {
+  const blockType = block.type;
+
+  // Handle different block types using the SDK's type system
+  switch (blockType) {
+    case "paragraph":
+      return extractPlainTextFromRichText(block.paragraph.rich_text);
+    case "heading_1":
+      return extractPlainTextFromRichText(block.heading_1.rich_text);
+    case "heading_2":
+      return extractPlainTextFromRichText(block.heading_2.rich_text);
+    case "heading_3":
+      return extractPlainTextFromRichText(block.heading_3.rich_text);
+    case "bulleted_list_item":
+      return extractPlainTextFromRichText(block.bulleted_list_item.rich_text);
+    case "numbered_list_item":
+      return extractPlainTextFromRichText(block.numbered_list_item.rich_text);
+    case "to_do":
+      return extractPlainTextFromRichText(block.to_do.rich_text);
+    case "toggle":
+      return extractPlainTextFromRichText(block.toggle.rich_text);
+    case "quote":
+      return extractPlainTextFromRichText(block.quote.rich_text);
+    case "callout":
+      return extractPlainTextFromRichText(block.callout.rich_text);
+    case "code":
+      return extractPlainTextFromRichText(block.code.rich_text);
+    case "child_page":
+      return block.child_page.title;
+    case "child_database":
+      return block.child_database.title;
+    case "equation":
+      return block.equation.expression;
+    case "table_row":
+      return block.table_row.cells.map(cell => extractPlainTextFromRichText(cell)).join(" | ");
+    default:
+      // Blocks without text content (divider, breadcrumb, etc.)
+      return "";
+  }
+}
+
+/**
+ * Fetch all blocks (content) from a Notion page and extract plain text
+ * Uses the official Notion SDK with pagination support
  *
- * @param headers - Response headers from Notion API
- * @returns Retry delay in seconds if rate limited, otherwise null
+ * @param pageId - The Notion page ID
+ * @param accessToken - Notion OAuth access token
+ * @returns Plain text content from the page
  */
-export function extractNotionRateLimitInfo(headers: Headers): number | null {
-  const retryAfter = headers.get("retry-after");
+export async function fetchPageContent(
+  pageId: string,
+  accessToken: string
+): Promise<string> {
+  const notion = createNotionClient(accessToken);
+  const textParts: string[] = [];
 
-  if (retryAfter) {
-    // Retry-After is in seconds (can be decimal)
-    return parseFloat(retryAfter);
+  try {
+    let hasMore = true;
+    let startCursor: string | undefined = undefined;
+
+    while (hasMore) {
+      const response = await notion.blocks.children.list({
+        block_id: pageId,
+        start_cursor: startCursor,
+        page_size: 100,
+      });
+
+      // Extract text from each block
+      for (const block of response.results) {
+        if (isFullBlock(block)) {
+          const text = extractPlainTextFromBlock(block);
+          if (text.trim()) {
+            textParts.push(text);
+          }
+        }
+      }
+
+      hasMore = response.has_more;
+      startCursor = response.next_cursor || undefined;
+    }
+  } catch (error) {
+    console.error(`Error fetching content for page ${pageId}:`, error);
   }
 
-  return null;
-}
-
-/**
- * Handle rate limiting with exponential backoff
- *
- * @param retryAfter - Seconds to wait before retrying
- */
-export async function waitForRateLimit(retryAfter: number): Promise<void> {
-  const delayMs = Math.max(retryAfter * 1000, 1000); // Minimum 1 second
-  console.log(`Rate limited. Waiting ${retryAfter} seconds before retry...`);
-  await new Promise((resolve) => setTimeout(resolve, delayMs));
+  return textParts.join("\n\n");
 }
