@@ -1,4 +1,4 @@
-import type { GitHubActivityInsert } from './types';
+import type { GitHubActivityInsert } from "./types";
 
 /**
  * Generic type for GitHub event payloads
@@ -12,16 +12,18 @@ type GitHubEvent = any;
  *
  * @param events - Array of events from GitHub API
  * @param userId - User's database ID
+ * @param reposWithCommits - Optional map of repo names to commit arrays from Commits API
  * @returns Array of activities ready for database insertion
  */
 export function transformEventsToActivities(
   events: GitHubEvent[],
-  userId: string
+  userId: string,
+  reposWithCommits?: Map<string, unknown[]>
 ): GitHubActivityInsert[] {
   const activities: GitHubActivityInsert[] = [];
 
   for (const event of events) {
-    const activity = transformSingleEvent(event, userId);
+    const activity = transformSingleEvent(event, userId, reposWithCommits);
     if (activity) {
       activities.push(activity);
     }
@@ -34,32 +36,50 @@ export function transformEventsToActivities(
  * Transform a single GitHub event to an activity
  * Returns null if event type is not supported
  */
-function transformSingleEvent(event: GitHubEvent, userId: string): GitHubActivityInsert | null {
-  const repoName = event.repo?.name || 'Unknown';
+function transformSingleEvent(
+  event: GitHubEvent,
+  userId: string,
+  reposWithCommits?: Map<string, unknown[]>
+): GitHubActivityInsert | null {
+  const repoName = event.repo?.name || "Unknown";
   const createdAt = event.created_at;
 
   switch (event.type) {
-    case 'PushEvent':
-      return transformPushEvent(event, userId, repoName, createdAt);
+    case "PushEvent":
+      return transformPushEvent(
+        event,
+        userId,
+        repoName,
+        createdAt,
+        reposWithCommits
+      );
 
-    case 'PullRequestEvent':
+    case "PullRequestEvent":
       return transformPullRequestEvent(event, userId, repoName, createdAt);
 
-    case 'PullRequestReviewEvent':
-      return transformPullRequestReviewEvent(event, userId, repoName, createdAt);
+    case "PullRequestReviewEvent":
+      return transformPullRequestReviewEvent(
+        event,
+        userId,
+        repoName,
+        createdAt
+      );
 
-    case 'WatchEvent':
+    case "WatchEvent":
       return transformWatchEvent(event, userId, repoName, createdAt);
 
-    case 'IssuesEvent':
+    case "IssuesEvent":
       return transformIssuesEvent(event, userId, repoName, createdAt);
 
-    case 'IssueCommentEvent':
+    case "IssueCommentEvent":
       return transformIssueCommentEvent(event, userId, repoName, createdAt);
 
-    case 'CreateEvent':
+    case "CreateEvent":
       // Only track branch/tag creation, not repo creation
-      if (event.payload?.ref_type === 'branch' || event.payload?.ref_type === 'tag') {
+      if (
+        event.payload?.ref_type === "branch" ||
+        event.payload?.ref_type === "tag"
+      ) {
         return transformCreateEvent(event, userId, repoName, createdAt);
       }
       return null;
@@ -73,28 +93,95 @@ function transformSingleEvent(event: GitHubEvent, userId: string): GitHubActivit
 /**
  * Transform PushEvent to commit activity
  */
-function transformPushEvent(event: GitHubEvent, userId: string, repoName: string, createdAt: string): GitHubActivityInsert {
-  const commits = event.payload?.commits || [];
-  const commitCount = commits.length;
-  const firstCommit = commits[0];
-  const commitMessage = firstCommit?.message || 'Pushed commits';
+function transformPushEvent(
+  event: GitHubEvent,
+  userId: string,
+  repoName: string,
+  createdAt: string,
+  reposWithCommits?: Map<string, unknown[]>
+): GitHubActivityInsert {
+  // Try to get commits from the Commits API first (more reliable)
+  const apiCommits = reposWithCommits?.get(repoName) as
+    | GitHubEvent[]
+    | undefined;
 
-  // Extract first line of commit message
-  const title = commitMessage.split('\n')[0].slice(0, 200);
+  // Fallback to event payload commits if available
+  const eventCommits = event.payload?.commits || [];
+  const eventSize = event.payload?.size;
+
+  // Use API commits if available, otherwise use event commits
+  let commits: GitHubEvent[] = [];
+  let commitCount = 0;
+
+  if (apiCommits && apiCommits.length > 0) {
+    // Filter commits to only those between 'before' and 'head' SHA from the push event
+    const beforeSha = event.payload?.before;
+    const headSha = event.payload?.head;
+
+    if (beforeSha && headSha) {
+      // Find commits that match this push event by SHA range
+      const headIndex = apiCommits.findIndex((c) => c.sha === headSha);
+      if (headIndex !== -1) {
+        // Get commits from head back until we hit 'before' or end of array
+        commits = [];
+        for (let i = headIndex; i < apiCommits.length; i++) {
+          commits.push(apiCommits[i]);
+          if (apiCommits[i].sha === beforeSha) {
+            break;
+          }
+        }
+        commitCount = commits.length;
+      } else {
+        // Couldn't find exact range, use recent commits as fallback
+        commits = apiCommits.slice(0, 20);
+        commitCount = eventSize || commits.length;
+      }
+    } else {
+      // No SHA range available, use all API commits
+      commits = apiCommits.slice(0, 20);
+      commitCount = eventSize || commits.length;
+    }
+  } else if (eventCommits.length > 0) {
+    // Use event commits as fallback
+    commits = eventCommits;
+    commitCount = eventSize || commits.length;
+  } else {
+    // No commits available from either source
+    commitCount = eventSize || 0;
+  }
+
+  const firstCommit = commits[0];
+  const commitMessage =
+    firstCommit?.commit?.message ||
+    firstCommit?.message ||
+    (commitCount > 0 ? "Pushed commits" : "Pushed changes");
+
+  // Extract first line of commit message for description
+  const commitDescription = commitMessage.split("\n")[0].slice(0, 200);
 
   return {
     user_id: userId,
-    provider: 'github',
-    activity_type: 'commit',
-    title,
-    description: `Pushed ${commitCount} commit${commitCount > 1 ? 's' : ''} to ${repoName}`,
-    url: `https://github.com/${repoName}/commits/${event.payload?.ref?.replace('refs/heads/', '')}`,
+    provider: "github",
+    activity_type: "commit",
+    title: `Pushed ${commitCount} commit${
+      commitCount !== 1 ? "s" : ""
+    } to ${repoName}`,
+    description: commitCount > 0 ? commitDescription : undefined,
+    url: `https://github.com/${repoName}/commits/${event.payload?.ref?.replace(
+      "refs/heads/",
+      ""
+    )}`,
     repo_name: repoName,
     metadata: {
       event_id: event.id,
       commit_count: commitCount,
       ref: event.payload?.ref,
       head: event.payload?.head,
+      before: event.payload?.before,
+      commits: commits.slice(0, 5).map((c: GitHubEvent) => ({
+        sha: c.sha || c.commit?.tree?.sha,
+        message: c.commit?.message || c.message,
+      })),
     },
     occurred_at: createdAt,
   };
@@ -103,16 +190,21 @@ function transformPushEvent(event: GitHubEvent, userId: string, repoName: string
 /**
  * Transform PullRequestEvent to PR activity
  */
-function transformPullRequestEvent(event: GitHubEvent, userId: string, repoName: string, createdAt: string): GitHubActivityInsert {
+function transformPullRequestEvent(
+  event: GitHubEvent,
+  userId: string,
+  repoName: string,
+  createdAt: string
+): GitHubActivityInsert {
   const pr = event.payload?.pull_request;
   const action = event.payload?.action;
-  const title = pr?.title || 'Pull Request';
+  const title = pr?.title || "Pull Request";
   const description = pr?.body?.slice(0, 200) || `${action} pull request`;
 
   return {
     user_id: userId,
-    provider: 'github',
-    activity_type: action === 'opened' ? 'pr_created' : 'pr_created',
+    provider: "github",
+    activity_type: action === "opened" ? "pr_created" : "pr_created",
     title,
     description,
     url: pr?.html_url,
@@ -130,16 +222,22 @@ function transformPullRequestEvent(event: GitHubEvent, userId: string, repoName:
 /**
  * Transform PullRequestReviewEvent to review activity
  */
-function transformPullRequestReviewEvent(event: GitHubEvent, userId: string, repoName: string, createdAt: string): GitHubActivityInsert {
+function transformPullRequestReviewEvent(
+  event: GitHubEvent,
+  userId: string,
+  repoName: string,
+  createdAt: string
+): GitHubActivityInsert {
   const review = event.payload?.review;
   const pr = event.payload?.pull_request;
-  const title = `Reviewed PR: ${pr?.title || 'Pull Request'}`;
-  const description = review?.body?.slice(0, 200) || `Reviewed pull request #${pr?.number}`;
+  const title = `Reviewed PR: ${pr?.title || "Pull Request"}`;
+  const description =
+    review?.body?.slice(0, 200) || `Reviewed pull request #${pr?.number}`;
 
   return {
     user_id: userId,
-    provider: 'github',
-    activity_type: 'pr_reviewed',
+    provider: "github",
+    activity_type: "pr_reviewed",
     title,
     description,
     url: review?.html_url || pr?.html_url,
@@ -157,11 +255,16 @@ function transformPullRequestReviewEvent(event: GitHubEvent, userId: string, rep
 /**
  * Transform WatchEvent to star activity
  */
-function transformWatchEvent(event: GitHubEvent, userId: string, repoName: string, createdAt: string): GitHubActivityInsert {
+function transformWatchEvent(
+  event: GitHubEvent,
+  userId: string,
+  repoName: string,
+  createdAt: string
+): GitHubActivityInsert {
   return {
     user_id: userId,
-    provider: 'github',
-    activity_type: 'star',
+    provider: "github",
+    activity_type: "star",
     title: `Starred ${repoName}`,
     description: `Starred repository ${repoName}`,
     url: `https://github.com/${repoName}`,
@@ -177,17 +280,28 @@ function transformWatchEvent(event: GitHubEvent, userId: string, repoName: strin
 /**
  * Transform IssuesEvent to issue activity
  */
-function transformIssuesEvent(event: GitHubEvent, userId: string, repoName: string, createdAt: string): GitHubActivityInsert {
+function transformIssuesEvent(
+  event: GitHubEvent,
+  userId: string,
+  repoName: string,
+  createdAt: string
+): GitHubActivityInsert {
   const issue = event.payload?.issue;
   const action = event.payload?.action;
-  const title = issue?.title || 'Issue';
+  const title = issue?.title || "Issue";
   const description = issue?.body?.slice(0, 200) || `${action} issue`;
 
   return {
     user_id: userId,
-    provider: 'github',
-    activity_type: 'issue',
-    title: `${action === 'opened' ? 'Opened' : action === 'closed' ? 'Closed' : 'Updated'} issue: ${title}`,
+    provider: "github",
+    activity_type: "issue",
+    title: `${
+      action === "opened"
+        ? "Opened"
+        : action === "closed"
+        ? "Closed"
+        : "Updated"
+    } issue: ${title}`,
     description,
     url: issue?.html_url,
     repo_name: repoName,
@@ -204,16 +318,21 @@ function transformIssuesEvent(event: GitHubEvent, userId: string, repoName: stri
 /**
  * Transform IssueCommentEvent to comment activity
  */
-function transformIssueCommentEvent(event: GitHubEvent, userId: string, repoName: string, createdAt: string): GitHubActivityInsert {
+function transformIssueCommentEvent(
+  event: GitHubEvent,
+  userId: string,
+  repoName: string,
+  createdAt: string
+): GitHubActivityInsert {
   const comment = event.payload?.comment;
   const issue = event.payload?.issue;
-  const title = `Commented on: ${issue?.title || 'issue'}`;
-  const description = comment?.body?.slice(0, 200) || 'Added a comment';
+  const title = `Commented on: ${issue?.title || "issue"}`;
+  const description = comment?.body?.slice(0, 200) || "Added a comment";
 
   return {
     user_id: userId,
-    provider: 'github',
-    activity_type: 'issue',
+    provider: "github",
+    activity_type: "issue",
     title,
     description,
     url: comment?.html_url,
@@ -222,7 +341,7 @@ function transformIssueCommentEvent(event: GitHubEvent, userId: string, repoName
       event_id: event.id,
       issue_number: issue?.number,
       comment_id: comment?.id,
-      action: 'commented',
+      action: "commented",
     },
     occurred_at: createdAt,
   };
@@ -231,15 +350,20 @@ function transformIssueCommentEvent(event: GitHubEvent, userId: string, repoName
 /**
  * Transform CreateEvent to branch/tag creation activity
  */
-function transformCreateEvent(event: GitHubEvent, userId: string, repoName: string, createdAt: string): GitHubActivityInsert {
+function transformCreateEvent(
+  event: GitHubEvent,
+  userId: string,
+  repoName: string,
+  createdAt: string
+): GitHubActivityInsert {
   const refType = event.payload?.ref_type;
   const ref = event.payload?.ref;
   const title = `Created ${refType}: ${ref}`;
 
   return {
     user_id: userId,
-    provider: 'github',
-    activity_type: 'commit',
+    provider: "github",
+    activity_type: "commit",
     title,
     description: `Created ${refType} ${ref} in ${repoName}`,
     url: `https://github.com/${repoName}`,
