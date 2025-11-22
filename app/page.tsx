@@ -1,13 +1,14 @@
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 
 export default function Home() {
   return (
     <DashboardLayout>
-      <div className="space-y-8">
+      <div className="space-y-12">
         <section>
-          <h2 className="text-lg font-semibold text-foreground mb-4">
+          <h2 className="text-xl font-semibold text-foreground mb-6 leading-tight">
             GitHub Activity
           </h2>
           <Card>
@@ -17,18 +18,25 @@ export default function Home() {
                 Your commits, PRs, reviews, and stars will appear here
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
+            <CardContent className="space-y-4">
+              <p className="text-base text-muted-foreground leading-relaxed">
                 Coming soon: Connect your GitHub account to see your activity
               </p>
+              <div className="flex gap-3 flex-wrap">
+                <Button>Connect GitHub</Button>
+                <Button variant="secondary">Secondary</Button>
+                <Button variant="outline">Outline</Button>
+                <Button variant="ghost">Ghost</Button>
+                <Button variant="destructive">Delete</Button>
+              </div>
             </CardContent>
           </Card>
         </section>
 
-        <Separator />
+        <Separator className="opacity-30" />
 
         <section>
-          <h2 className="text-lg font-semibold text-foreground mb-4">
+          <h2 className="text-xl font-semibold text-foreground mb-6 leading-tight">
             Manual Notes
           </h2>
           <Card>
@@ -39,17 +47,17 @@ export default function Home() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-base text-muted-foreground leading-relaxed">
                 Coming soon: Add your own notes and learnings
               </p>
             </CardContent>
           </Card>
         </section>
 
-        <Separator />
+        <Separator className="opacity-30" />
 
         <section>
-          <h2 className="text-lg font-semibold text-foreground mb-4">
+          <h2 className="text-xl font-semibold text-foreground mb-6 leading-tight">
             Generated Content
           </h2>
           <Card>
@@ -60,7 +68,7 @@ export default function Home() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-base text-muted-foreground leading-relaxed">
                 Coming soon: Generate shareable content from your work
               </p>
             </CardContent>
