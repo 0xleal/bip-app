@@ -7,8 +7,12 @@ import {
   MessageSquareIcon,
   ExternalLinkIcon,
   GitBranchIcon,
+  FileTextIcon,
+  DatabaseIcon,
+  FolderIcon,
 } from "lucide-react";
 import type { GitHubActivity } from "@/lib/github/types";
+import type { NotionActivityMetadata } from "@/lib/notion/types";
 
 /**
  * Extract commits from activity metadata
@@ -37,9 +41,23 @@ function getCommitsFromMetadata(
 /**
  * Get icon component based on activity type
  */
-function getActivityIcon(activityType: string) {
+function getActivityIcon(activityType: string, metadata?: unknown) {
   const iconProps = { className: "h-5 w-5 text-muted-foreground" };
 
+  // Check if this is a Notion activity
+  if (activityType.startsWith("page_") || activityType.startsWith("database_")) {
+    const notionMetadata = metadata as NotionActivityMetadata | undefined;
+
+    if (activityType.startsWith("database_")) {
+      return <DatabaseIcon {...iconProps} className="h-5 w-5 text-purple-500" />;
+    } else if (notionMetadata?.parent_type === "workspace") {
+      return <FileTextIcon {...iconProps} className="h-5 w-5 text-blue-500" />;
+    } else {
+      return <FileTextIcon {...iconProps} className="h-5 w-5 text-gray-500" />;
+    }
+  }
+
+  // GitHub activity icons
   switch (activityType) {
     case "commit":
       return <GitCommitIcon {...iconProps} />;
@@ -54,6 +72,25 @@ function getActivityIcon(activityType: string) {
     default:
       return <GitCommitIcon {...iconProps} />;
   }
+}
+
+/**
+ * Get Notion metadata badge text based on parent type
+ */
+function getNotionLocationBadge(metadata: unknown): string | null {
+  if (!metadata || typeof metadata !== "object") return null;
+
+  const notionMetadata = metadata as NotionActivityMetadata;
+
+  if (notionMetadata.parent_type === "workspace") {
+    return "Workspace";
+  } else if (notionMetadata.parent_type === "page_id") {
+    return "Nested page";
+  } else if (notionMetadata.parent_type === "database_id") {
+    return "In database";
+  }
+
+  return null;
 }
 
 /**
@@ -86,15 +123,25 @@ interface ActivityCardProps {
 }
 
 export function ActivityCard({ activity }: ActivityCardProps) {
-  const icon = getActivityIcon(activity.activity_type);
+  const icon = getActivityIcon(activity.activity_type, activity.metadata);
   const timeAgo = formatTimeAgo(activity.occurred_at);
 
-  // Get commit details for multi-commit pushes
+  // Detect activity provider
+  const isNotionActivity = activity.provider === "notion";
+  const isGitHubActivity = activity.provider === "github";
+
+  // Get commit details for multi-commit pushes (GitHub)
   const commits =
-    activity.activity_type === "commit"
+    isGitHubActivity && activity.activity_type === "commit"
       ? getCommitsFromMetadata(activity.metadata)
       : [];
   const hasMultipleCommits = commits.length > 1;
+
+  // Get Notion metadata
+  const notionLocationBadge = isNotionActivity
+    ? getNotionLocationBadge(activity.metadata)
+    : null;
+  const notionMetadata = (isNotionActivity ? activity.metadata : null) as NotionActivityMetadata | null;
 
   return (
     <Card className="hover:bg-accent/50 transition-colors">
@@ -137,13 +184,36 @@ export function ActivityCard({ activity }: ActivityCardProps) {
             </div>
           )}
 
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            {activity.repo_name && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+            {/* GitHub repo name */}
+            {isGitHubActivity && activity.repo_name && (
               <>
                 <span className="font-mono truncate">{activity.repo_name}</span>
                 <span>·</span>
               </>
             )}
+
+            {/* Notion location badge */}
+            {isNotionActivity && notionLocationBadge && (
+              <>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
+                  <FolderIcon className="h-3 w-3" />
+                  {notionLocationBadge}
+                </span>
+                <span>·</span>
+              </>
+            )}
+
+            {/* Notion object type */}
+            {isNotionActivity && notionMetadata && (
+              <>
+                <span className="capitalize">
+                  {notionMetadata.object_type === "database" ? "Database" : "Page"}
+                </span>
+                <span>·</span>
+              </>
+            )}
+
             <time dateTime={activity.occurred_at}>{timeAgo}</time>
           </div>
         </div>
@@ -155,7 +225,7 @@ export function ActivityCard({ activity }: ActivityCardProps) {
                 href={activity.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="View on GitHub"
+                aria-label={isNotionActivity ? "View in Notion" : "View on GitHub"}
               >
                 <ExternalLinkIcon className="h-4 w-4" />
               </a>

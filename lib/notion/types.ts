@@ -98,6 +98,7 @@ export type NotionActivityInsert =
 export interface SyncNotionResult {
   success: boolean;
   newItemsCount?: number;
+  updatedItemsCount?: number;
   totalItems?: number;
   lastSyncedAt: string;
   error?: string;
@@ -111,4 +112,18 @@ export interface GetNotionActivitiesOptions {
 export interface GetNotionActivitiesResult {
   activities?: Array<Database["public"]["Tables"]["notion_activities"]["Row"]>;
   error?: string;
+}
+
+/**
+ * Metadata stored in notion_activities.metadata JSONB field
+ */
+export interface NotionActivityMetadata {
+  notion_page_id: string;
+  object_type: "page" | "database";
+  parent_type: "workspace" | "page_id" | "database_id";
+  parent_id?: string | null;
+  archived: boolean;
+  in_trash: boolean;
+  created_by_id: string;
+  last_edited_by_id: string;
 }
