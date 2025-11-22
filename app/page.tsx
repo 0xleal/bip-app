@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { GitHubActivitySection } from "@/components/activity/github-activity-section";
+import { NotionActivitySection } from "@/components/activity/notion-activity-section";
 import { ManualNotesSection } from "@/components/notes/manual-notes-section";
 import { ContentGenerationSection } from "@/components/content/content-generation-section";
 import { DateRangeFilter } from "@/components/shared/date-range-filter";
@@ -26,6 +27,10 @@ export default function Home() {
         <Separator className="opacity-30" />
 
         <GitHubActivitySection dateRange={dateRange} />
+
+        <Separator className="opacity-30" />
+
+        <NotionActivitySection dateRange={dateRange} />
 
         <Separator className="opacity-30" />
 

@@ -86,7 +86,7 @@ export async function generateContentAction(
     }
 
     // Fetch GitHub activities from database
-    const { data: activities, error: activitiesError } = await supabaseAdmin
+    const { data: githubActivities, error: githubError } = await supabaseAdmin
       .from("github_activities")
       .select("*")
       .eq("user_id", userId)
@@ -94,13 +94,33 @@ export async function generateContentAction(
       .lte("occurred_at", end.toISOString())
       .order("occurred_at", { ascending: false });
 
-    if (activitiesError) {
-      console.error("Error fetching activities:", activitiesError);
+    if (githubError) {
+      console.error("Error fetching GitHub activities:", githubError);
       return {
         success: false,
         error: "Failed to fetch GitHub activities",
       };
     }
+
+    // Fetch Notion activities from database
+    const { data: notionActivities, error: notionError } = await supabaseAdmin
+      .from("notion_activities")
+      .select("*")
+      .eq("user_id", userId)
+      .gte("occurred_at", start.toISOString())
+      .lte("occurred_at", end.toISOString())
+      .order("occurred_at", { ascending: false });
+
+    if (notionError) {
+      console.error("Error fetching Notion activities:", notionError);
+      // Don't fail if Notion activities fail, just log and continue
+    }
+
+    // Combine all activities
+    const activities = [
+      ...(githubActivities || []),
+      ...(notionActivities || []),
+    ].sort((a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime());
 
     // Fetch manual notes from database
     const { data: notes, error: notesError } = await supabaseAdmin
@@ -128,15 +148,32 @@ export async function generateContentAction(
       };
     }
 
-    // Transform activities for AI input
-    const formattedActivities = (activities || []).map((activity) => ({
-      type: activity.activity_type,
-      title: activity.title,
-      description: activity.description || undefined,
-      timestamp: activity.occurred_at,
-      repo: activity.repo_name || undefined,
-      url: activity.url || undefined,
-    }));
+    // Transform activities for AI input (both GitHub and Notion)
+    const formattedActivities = (activities || []).map((activity) => {
+      const formatted: {
+        type: string;
+        title: string;
+        description?: string;
+        timestamp: string;
+        provider?: string;
+        repo?: string;
+        url?: string;
+      } = {
+        type: activity.activity_type,
+        title: activity.title,
+        description: activity.description || undefined,
+        timestamp: activity.occurred_at,
+        provider: activity.provider || "github",
+        url: activity.url || undefined,
+      };
+
+      // Only add repo if it exists (GitHub activities have this)
+      if ("repo_name" in activity && activity.repo_name) {
+        formatted.repo = activity.repo_name as string;
+      }
+
+      return formatted;
+    });
 
     // Transform notes for AI input
     const formattedNotes = (notes || []).map((note) => ({

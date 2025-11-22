@@ -21,6 +21,7 @@ export interface GenerateContentInput {
     title: string;
     description?: string;
     timestamp: string;
+    provider?: string;
     repo?: string;
     url?: string;
   }>;
