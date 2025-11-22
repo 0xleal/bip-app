@@ -14,7 +14,7 @@ import type {
  * Calculate date threshold for date range filtering
  */
 function calculateDateThreshold(
-  dateRange: '24h' | '7d' | '30d' | 'custom',
+  dateRange: "24h" | "7d" | "30d" | "custom",
   customStartDate?: string
 ): string {
   if (dateRange === "custom" && customStartDate) {
@@ -38,9 +38,7 @@ function calculateDateThreshold(
  *
  * Server Action to create a note with validation
  */
-export async function createNote(
-  content: string
-): Promise<CreateNoteResult> {
+export async function createNote(content: string): Promise<CreateNoteResult> {
   try {
     const session = await getCurrentSession();
 
@@ -52,7 +50,9 @@ export async function createNote(
     const validation = noteSchema.safeParse({ content });
 
     if (!validation.success) {
-      return { error: validation.error.issues[0]?.message || "Invalid note content" };
+      return {
+        error: validation.error.issues[0]?.message || "Invalid note content",
+      };
     }
 
     // Insert note into database (using admin client to bypass RLS)
@@ -122,9 +122,7 @@ export async function getNotes(
  *
  * Server Action to delete a note with validation
  */
-export async function deleteNote(
-  noteId: string
-): Promise<DeleteNoteResult> {
+export async function deleteNote(noteId: string): Promise<DeleteNoteResult> {
   try {
     const session = await getCurrentSession();
 

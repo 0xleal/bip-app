@@ -1,12 +1,12 @@
-'use server';
+"use server";
 
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/config';
-import { supabaseAdmin } from '@/lib/supabase/client';
-import { generateContent } from '@/lib/ai/client';
-import { checkRateLimit, incrementUsage, getUserUsage } from '@/lib/rate-limit';
-import type { ContentSuggestion } from '@/lib/ai/types';
-import type { RateLimitUsage } from '@/lib/rate-limit';
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth/config";
+import { supabaseAdmin } from "@/lib/supabase/client";
+import { generateContent } from "@/lib/ai/client";
+import { checkRateLimit, incrementUsage, getUserUsage } from "@/lib/rate-limit";
+import type { ContentSuggestion } from "@/lib/ai/types";
+import type { RateLimitUsage } from "@/lib/rate-limit";
 
 export interface GenerateContentResult {
   success: boolean;
@@ -46,7 +46,7 @@ export async function generateContentAction(
     if (!session?.user?.id) {
       return {
         success: false,
-        error: 'You must be signed in to generate content',
+        error: "You must be signed in to generate content",
       };
     }
 
@@ -66,56 +66,56 @@ export async function generateContentAction(
     let start: Date;
     let end: Date = new Date();
 
-    if (dateRange === 'custom' && startDate && endDate) {
+    if (dateRange === "custom" && startDate && endDate) {
       start = new Date(startDate);
       end = new Date(endDate);
-    } else if (dateRange === '24h') {
+    } else if (dateRange === "24h") {
       start = new Date();
       start.setHours(start.getHours() - 24);
-    } else if (dateRange === '7d') {
+    } else if (dateRange === "7d") {
       start = new Date();
       start.setDate(start.getDate() - 7);
-    } else if (dateRange === '30d') {
+    } else if (dateRange === "30d") {
       start = new Date();
       start.setDate(start.getDate() - 30);
     } else {
       return {
         success: false,
-        error: 'Invalid date range',
+        error: "Invalid date range",
       };
     }
 
     // Fetch GitHub activities from database
     const { data: activities, error: activitiesError } = await supabaseAdmin
-      .from('github_activities')
-      .select('*')
-      .eq('user_id', userId)
-      .gte('occurred_at', start.toISOString())
-      .lte('occurred_at', end.toISOString())
-      .order('occurred_at', { ascending: false });
+      .from("github_activities")
+      .select("*")
+      .eq("user_id", userId)
+      .gte("occurred_at", start.toISOString())
+      .lte("occurred_at", end.toISOString())
+      .order("occurred_at", { ascending: false });
 
     if (activitiesError) {
-      console.error('Error fetching activities:', activitiesError);
+      console.error("Error fetching activities:", activitiesError);
       return {
         success: false,
-        error: 'Failed to fetch GitHub activities',
+        error: "Failed to fetch GitHub activities",
       };
     }
 
     // Fetch manual notes from database
     const { data: notes, error: notesError } = await supabaseAdmin
-      .from('manual_notes')
-      .select('*')
-      .eq('user_id', userId)
-      .gte('created_at', start.toISOString())
-      .lte('created_at', end.toISOString())
-      .order('created_at', { ascending: false });
+      .from("manual_notes")
+      .select("*")
+      .eq("user_id", userId)
+      .gte("created_at", start.toISOString())
+      .lte("created_at", end.toISOString())
+      .order("created_at", { ascending: false });
 
     if (notesError) {
-      console.error('Error fetching notes:', notesError);
+      console.error("Error fetching notes:", notesError);
       return {
         success: false,
-        error: 'Failed to fetch manual notes',
+        error: "Failed to fetch manual notes",
       };
     }
 
@@ -123,7 +123,8 @@ export async function generateContentAction(
     if (!activities?.length && !notes?.length) {
       return {
         success: false,
-        error: 'No activity or notes found for the selected date range. Add some notes or sync your GitHub activity first.',
+        error:
+          "No activity or notes found for the selected date range. Add some notes or sync your GitHub activity first.",
       };
     }
 
@@ -167,7 +168,7 @@ export async function generateContentAction(
     const suggestionsData: any = generated.suggestions;
 
     const { error: saveError } = await supabaseAdmin
-      .from('generated_content')
+      .from("generated_content")
       .insert({
         user_id: userId,
         source_data: sourceData,
@@ -177,7 +178,7 @@ export async function generateContentAction(
       .single();
 
     if (saveError) {
-      console.error('Error saving generated content:', saveError);
+      console.error("Error saving generated content:", saveError);
       // Don't fail the request, just log the error
     }
 
@@ -193,13 +194,13 @@ export async function generateContentAction(
       usage: updatedUsage,
     };
   } catch (error) {
-    console.error('Error in generateContentAction:', error);
+    console.error("Error in generateContentAction:", error);
     return {
       success: false,
       error:
         error instanceof Error
           ? error.message
-          : 'Failed to generate content. Please try again.',
+          : "Failed to generate content. Please try again.",
     };
   }
 }
@@ -213,7 +214,7 @@ export async function getUserQuotaAction(): Promise<GetUsageResult> {
     if (!session?.user?.id) {
       return {
         success: false,
-        error: 'You must be signed in',
+        error: "You must be signed in",
       };
     }
 
@@ -224,10 +225,10 @@ export async function getUserQuotaAction(): Promise<GetUsageResult> {
       usage,
     };
   } catch (error) {
-    console.error('Error getting user quota:', error);
+    console.error("Error getting user quota:", error);
     return {
       success: false,
-      error: 'Failed to get usage information',
+      error: "Failed to get usage information",
     };
   }
 }
@@ -242,22 +243,22 @@ export async function getContentHistoryAction(): Promise<GetContentHistoryResult
     if (!session?.user?.id) {
       return {
         success: false,
-        error: 'You must be signed in',
+        error: "You must be signed in",
       };
     }
 
     const { data, error } = await supabaseAdmin
-      .from('generated_content')
-      .select('id, suggestions, created_at')
-      .eq('user_id', session.user.id)
-      .order('created_at', { ascending: false })
+      .from("generated_content")
+      .select("id, suggestions, created_at")
+      .eq("user_id", session.user.id)
+      .order("created_at", { ascending: false })
       .limit(10);
 
     if (error) {
-      console.error('Error fetching content history:', error);
+      console.error("Error fetching content history:", error);
       return {
         success: false,
-        error: 'Failed to fetch content history',
+        error: "Failed to fetch content history",
       };
     }
 
@@ -270,10 +271,10 @@ export async function getContentHistoryAction(): Promise<GetContentHistoryResult
       })),
     };
   } catch (error) {
-    console.error('Error in getContentHistoryAction:', error);
+    console.error("Error in getContentHistoryAction:", error);
     return {
       success: false,
-      error: 'Failed to fetch content history',
+      error: "Failed to fetch content history",
     };
   }
 }

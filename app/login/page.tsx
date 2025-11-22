@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { signIn } from 'next-auth/react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Github } from 'lucide-react';
+import { signIn } from "next-auth/react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Github } from "lucide-react";
 
 export default function LoginPage() {
   const handleSignIn = () => {
-    signIn('github', { callbackUrl: '/' });
+    signIn("github", { callbackUrl: "/" });
   };
 
   return (
@@ -24,17 +24,14 @@ export default function LoginPage() {
           </div>
 
           <div className="space-y-4">
-            <Button
-              onClick={handleSignIn}
-              size="lg"
-              className="w-full gap-2"
-            >
+            <Button onClick={handleSignIn} size="lg" className="w-full gap-2">
               <Github className="h-5 w-5" />
               Sign in with GitHub
             </Button>
 
             <p className="text-sm text-[var(--color-text-tertiary)]">
-              By signing in, you agree to sync your GitHub activity and generate shareable content
+              By signing in, you agree to sync your GitHub activity and generate
+              shareable content
             </p>
           </div>
         </div>

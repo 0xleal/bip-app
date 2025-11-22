@@ -1,14 +1,15 @@
-import type { Database } from '@/types/supabase';
+import type { Database } from "@/types/supabase";
 
-export type GitHubActivity = Database['public']['Tables']['github_activities']['Row'];
-export type ManualNote = Database['public']['Tables']['manual_notes']['Row'];
+export type GitHubActivity =
+  Database["public"]["Tables"]["github_activities"]["Row"];
+export type ManualNote = Database["public"]["Tables"]["manual_notes"]["Row"];
 
 export interface ContentSuggestion {
   hook: string;
   body: string;
   optional?: string;
-  tone: 'conversational' | 'technical' | 'reflective';
-  format: 'short-post' | 'thread' | 'code-snippet' | 'til' | 'before-after';
+  tone: "conversational" | "technical" | "reflective";
+  format: "short-post" | "thread" | "code-snippet" | "til" | "before-after";
 }
 
 export interface GeneratedContent {

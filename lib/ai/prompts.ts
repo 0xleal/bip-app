@@ -3,7 +3,7 @@
  * Based on Austin Kleon's "Show Your Work!" principles
  */
 
-export const PROMPT_VERSION = 'v1';
+export const PROMPT_VERSION = "v1";
 
 export const SHOW_YOUR_WORK_SYSTEM_PROMPT = `You are a content creation assistant based on Austin Kleon's "Show Your Work!" principles. Your job is to help transform daily activities, learnings, and work into shareable content.
 
@@ -76,7 +76,7 @@ export function formatUserInput(
   let prompt = `Here's what I've been working on (${dateRange}):\n\n`;
 
   if (activities.length > 0) {
-    prompt += '## GitHub Activity:\n\n';
+    prompt += "## GitHub Activity:\n\n";
     activities.forEach((activity, index) => {
       prompt += `${index + 1}. **${activity.type}** - ${activity.title}\n`;
       if (activity.description) {
@@ -85,12 +85,14 @@ export function formatUserInput(
       if (activity.repo) {
         prompt += `   Repository: ${activity.repo}\n`;
       }
-      prompt += `   Time: ${new Date(activity.timestamp).toLocaleDateString()}\n\n`;
+      prompt += `   Time: ${new Date(
+        activity.timestamp
+      ).toLocaleDateString()}\n\n`;
     });
   }
 
   if (notes.length > 0) {
-    prompt += '## Notes & Learnings:\n\n';
+    prompt += "## Notes & Learnings:\n\n";
     notes.forEach((note, index) => {
       prompt += `${index + 1}. ${note.content}\n`;
       prompt += `   Time: ${new Date(note.timestamp).toLocaleDateString()}\n\n`;
@@ -98,10 +100,10 @@ export function formatUserInput(
   }
 
   if (activities.length === 0 && notes.length === 0) {
-    prompt += 'No activity or notes for this period.\n';
+    prompt += "No activity or notes for this period.\n";
   }
 
-  prompt += '\nBased on this, what should I share?';
+  prompt += "\nBased on this, what should I share?";
 
   return prompt;
 }
@@ -141,11 +143,17 @@ export function truncateInput(
   const maxNotes = maxItems - maxActivities;
 
   const truncatedActivities = activities
-    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+    .sort(
+      (a, b) =>
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    )
     .slice(0, maxActivities);
 
   const truncatedNotes = notes
-    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+    .sort(
+      (a, b) =>
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    )
     .slice(0, maxNotes);
 
   return {

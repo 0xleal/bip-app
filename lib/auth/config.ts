@@ -1,11 +1,11 @@
-import { NextAuthOptions } from 'next-auth';
-import GithubProvider from 'next-auth/providers/github';
-import { supabaseAdmin } from '@/lib/supabase/client';
+import { NextAuthOptions } from "next-auth";
+import GithubProvider from "next-auth/providers/github";
+import { supabaseAdmin } from "@/lib/supabase/client";
 import {
   refreshGitHubAccessToken,
   calculateTokenExpiration,
-} from './token-refresh';
-import type { Database } from '@/types/supabase';
+} from "./token-refresh";
+import type { Database } from "@/types/supabase";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -14,16 +14,16 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.GITHUB_CLIENT_SECRET!,
       authorization: {
         params: {
-          scope: 'read:user user:email repo',
+          scope: "read:user user:email repo",
         },
       },
     }),
   ],
   session: {
-    strategy: 'jwt',
+    strategy: "jwt",
   },
   pages: {
-    signIn: '/login',
+    signIn: "/login",
   },
   callbacks: {
     async signIn({ user, account, profile }) {
@@ -38,8 +38,8 @@ export const authOptions: NextAuthOptions = {
           avatar_url?: string;
         };
 
-        const githubId = githubProfile.id?.toString() || '';
-        const githubUsername = githubProfile.login || '';
+        const githubId = githubProfile.id?.toString() || "";
+        const githubUsername = githubProfile.login || "";
         const email = user.email || null;
         const name = user.name || null;
         const avatarUrl = user.image || null;
@@ -50,7 +50,7 @@ export const authOptions: NextAuthOptions = {
           : null;
 
         // Upsert user to Supabase
-        const userData: Database['public']['Tables']['users']['Insert'] = {
+        const userData: Database["public"]["Tables"]["users"]["Insert"] = {
           github_id: githubId,
           github_username: githubUsername,
           email,
@@ -61,20 +61,18 @@ export const authOptions: NextAuthOptions = {
           token_expires_at: tokenExpiresAt,
         };
 
-        const { error } = await supabaseAdmin
-          .from('users')
-          .upsert(userData, {
-            onConflict: 'github_id',
-          });
+        const { error } = await supabaseAdmin.from("users").upsert(userData, {
+          onConflict: "github_id",
+        });
 
         if (error) {
-          console.error('Error upserting user to Supabase:', error);
+          console.error("Error upserting user to Supabase:", error);
           return false;
         }
 
         return true;
       } catch (error) {
-        console.error('Error in signIn callback:', error);
+        console.error("Error in signIn callback:", error);
         return false;
       }
     },
@@ -87,8 +85,8 @@ export const authOptions: NextAuthOptions = {
           login?: string;
         };
 
-        token.github_id = githubProfile.id?.toString() || '';
-        token.github_username = githubProfile.login || '';
+        token.github_id = githubProfile.id?.toString() || "";
+        token.github_username = githubProfile.login || "";
         token.accessToken = account.access_token;
         token.refreshToken = account.refresh_token;
         token.accessTokenExpires = account.expires_at
@@ -97,9 +95,9 @@ export const authOptions: NextAuthOptions = {
 
         // Get user ID from database
         const { data: userData } = await supabaseAdmin
-          .from('users')
-          .select('id')
-          .eq('github_id', token.github_id)
+          .from("users")
+          .select("id")
+          .eq("github_id", token.github_id)
           .single();
 
         if (userData) {
@@ -109,7 +107,8 @@ export const authOptions: NextAuthOptions = {
 
       // Check if token needs refresh
       if (token.accessTokenExpires && token.refreshToken) {
-        const shouldRefresh = Date.now() > (token.accessTokenExpires - 5 * 60 * 1000);
+        const shouldRefresh =
+          Date.now() > token.accessTokenExpires - 5 * 60 * 1000;
 
         if (shouldRefresh) {
           try {
@@ -122,29 +121,31 @@ export const authOptions: NextAuthOptions = {
             );
 
             // Update tokens in database
-            const updateData: Database['public']['Tables']['users']['Update'] = {
-              github_access_token: refreshedTokens.access_token,
-              github_refresh_token: refreshedTokens.refresh_token,
-              token_expires_at: newTokenExpiresAt,
-            };
+            const updateData: Database["public"]["Tables"]["users"]["Update"] =
+              {
+                github_access_token: refreshedTokens.access_token,
+                github_refresh_token: refreshedTokens.refresh_token,
+                token_expires_at: newTokenExpiresAt,
+              };
 
             await supabaseAdmin
-              .from('users')
+              .from("users")
               .update(updateData)
-              .eq('github_id', token.github_id);
+              .eq("github_id", token.github_id);
 
             return {
               ...token,
               accessToken: refreshedTokens.access_token,
               refreshToken: refreshedTokens.refresh_token,
-              accessTokenExpires: Date.now() + refreshedTokens.expires_in * 1000,
+              accessTokenExpires:
+                Date.now() + refreshedTokens.expires_in * 1000,
             };
           } catch (error) {
-            console.error('Error refreshing access token:', error);
+            console.error("Error refreshing access token:", error);
             // Return old token, but force sign in on next request
             return {
               ...token,
-              error: 'RefreshAccessTokenError',
+              error: "RefreshAccessTokenError",
             };
           }
         }

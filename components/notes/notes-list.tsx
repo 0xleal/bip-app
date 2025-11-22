@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { deleteNote } from '@/app/actions/notes';
-import { toast } from 'sonner';
-import type { ManualNote } from '@/lib/notes/types';
-import { Trash2 } from 'lucide-react';
+import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { deleteNote } from "@/app/actions/notes";
+import { toast } from "sonner";
+import type { ManualNote } from "@/lib/notes/types";
+import { Trash2 } from "lucide-react";
 
 interface NotesListProps {
   notes: ManualNote[];
@@ -18,7 +18,7 @@ export function NotesList({ notes, onNoteDeleted }: NotesListProps) {
 
   const handleDelete = async (noteId: string) => {
     // Simple confirmation
-    if (!confirm('Are you sure you want to delete this note?')) {
+    if (!confirm("Are you sure you want to delete this note?")) {
       return;
     }
 
@@ -28,16 +28,16 @@ export function NotesList({ notes, onNoteDeleted }: NotesListProps) {
       const result = await deleteNote(noteId);
 
       if (result.error) {
-        toast.error('Failed to delete note', {
+        toast.error("Failed to delete note", {
           description: result.error,
         });
       } else {
-        toast.success('Note deleted successfully');
+        toast.success("Note deleted successfully");
         onNoteDeleted();
       }
     } catch (error) {
-      console.error('Error deleting note:', error);
-      toast.error('An unexpected error occurred');
+      console.error("Error deleting note:", error);
+      toast.error("An unexpected error occurred");
     } finally {
       setDeletingNoteId(null);
     }
@@ -51,15 +51,17 @@ export function NotesList({ notes, onNoteDeleted }: NotesListProps) {
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins} minute${diffMins === 1 ? '' : 's'} ago`;
-    if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
-    if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60)
+      return `${diffMins} minute${diffMins === 1 ? "" : "s"} ago`;
+    if (diffHours < 24)
+      return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
 
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
@@ -76,10 +78,7 @@ export function NotesList({ notes, onNoteDeleted }: NotesListProps) {
   return (
     <div className="space-y-3">
       {notes.map((note) => (
-        <Card
-          key={note.id}
-          className="transition-all hover:shadow-md"
-        >
+        <Card key={note.id} className="transition-all hover:shadow-md">
           <CardContent className="p-4">
             <div className="flex gap-4">
               <div className="flex-1">
@@ -87,7 +86,7 @@ export function NotesList({ notes, onNoteDeleted }: NotesListProps) {
                   {note.content}
                 </p>
                 <p className="text-xs text-muted-foreground mt-3">
-                  {formatDate(note.created_at || '')}
+                  {formatDate(note.created_at || "")}
                 </p>
               </div>
               <Button

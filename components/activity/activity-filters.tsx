@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { Button } from '@/components/ui/button';
-import { RefreshCwIcon } from 'lucide-react';
-import type { DateRange } from '@/lib/github/types';
+import { Button } from "@/components/ui/button";
+import { RefreshCwIcon } from "lucide-react";
+import type { DateRange } from "@/lib/github/types";
 
 /**
  * Format timestamp to relative time for "Last synced" display
@@ -15,11 +15,11 @@ function formatTimeAgo(timestamp: string): string {
   const diffHours = Math.floor(diffMinutes / 60);
 
   if (diffHours > 0) {
-    return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
   } else if (diffMinutes > 0) {
-    return `${diffMinutes} minute${diffMinutes > 1 ? 's' : ''} ago`;
+    return `${diffMinutes} minute${diffMinutes > 1 ? "s" : ""} ago`;
   } else {
-    return 'Just now';
+    return "Just now";
   }
 }
 
@@ -38,27 +38,26 @@ export function ActivityFilters({
   isSyncing,
   onSync,
 }: ActivityFiltersProps) {
-
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
       <div className="flex gap-2 flex-wrap">
         <Button
-          variant={dateRange === '24h' ? 'default' : 'outline'}
-          onClick={() => onDateRangeChange('24h')}
+          variant={dateRange === "24h" ? "default" : "outline"}
+          onClick={() => onDateRangeChange("24h")}
           size="sm"
         >
           Last 24h
         </Button>
         <Button
-          variant={dateRange === '7d' ? 'default' : 'outline'}
-          onClick={() => onDateRangeChange('7d')}
+          variant={dateRange === "7d" ? "default" : "outline"}
+          onClick={() => onDateRangeChange("7d")}
           size="sm"
         >
           Last 7 days
         </Button>
         <Button
-          variant={dateRange === '30d' ? 'default' : 'outline'}
-          onClick={() => onDateRangeChange('30d')}
+          variant={dateRange === "30d" ? "default" : "outline"}
+          onClick={() => onDateRangeChange("30d")}
           size="sm"
         >
           Last 30 days
@@ -79,8 +78,10 @@ export function ActivityFilters({
           variant="outline"
           className="gap-2"
         >
-          <RefreshCwIcon className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
-          {isSyncing ? 'Syncing...' : 'Sync'}
+          <RefreshCwIcon
+            className={`h-4 w-4 ${isSyncing ? "animate-spin" : ""}`}
+          />
+          {isSyncing ? "Syncing..." : "Sync"}
         </Button>
       </div>
     </div>

@@ -1,14 +1,20 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
-import { RefreshCwIcon } from 'lucide-react';
-import { ActivityTimeline } from './activity-timeline';
-import { getGitHubActivities, syncGitHubActivity } from '@/app/actions/github';
-import type { DateRange, GitHubActivity } from '@/lib/github/types';
-import { toast } from 'sonner';
+import { useState, useEffect, useCallback, useRef } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { RefreshCwIcon } from "lucide-react";
+import { ActivityTimeline } from "./activity-timeline";
+import { getGitHubActivities, syncGitHubActivity } from "@/app/actions/github";
+import type { DateRange, GitHubActivity } from "@/lib/github/types";
+import { toast } from "sonner";
 
 /**
  * Format timestamp to relative time for "Last synced" display
@@ -21,11 +27,11 @@ function formatTimeAgo(timestamp: string): string {
   const diffHours = Math.floor(diffMinutes / 60);
 
   if (diffHours > 0) {
-    return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
   } else if (diffMinutes > 0) {
-    return `${diffMinutes} minute${diffMinutes > 1 ? 's' : ''} ago`;
+    return `${diffMinutes} minute${diffMinutes > 1 ? "s" : ""} ago`;
   } else {
-    return 'Just now';
+    return "Just now";
   }
 }
 
@@ -52,7 +58,9 @@ interface GitHubActivitySectionProps {
   dateRange: DateRange;
 }
 
-export function GitHubActivitySection({ dateRange }: GitHubActivitySectionProps) {
+export function GitHubActivitySection({
+  dateRange,
+}: GitHubActivitySectionProps) {
   const [activities, setActivities] = useState<GitHubActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -91,8 +99,8 @@ export function GitHubActivitySection({ dateRange }: GitHubActivitySectionProps)
         }
       }
     } catch (err) {
-      console.error('Error loading activities:', err);
-      setError('Failed to load activities');
+      console.error("Error loading activities:", err);
+      setError("Failed to load activities");
       setActivities([]);
     } finally {
       setLoading(false);
@@ -112,13 +120,13 @@ export function GitHubActivitySection({ dateRange }: GitHubActivitySectionProps)
       const result = await syncGitHubActivity();
 
       if (result.success) {
-        toast.success('Synced successfully', {
+        toast.success("Synced successfully", {
           description: `Added ${result.newItemsCount} new activities`,
         });
 
         // Check for rate limit warning
         if (result.rateLimitRemaining < 100) {
-          toast.warning('Rate limit warning', {
+          toast.warning("Rate limit warning", {
             description: `Only ${result.rateLimitRemaining} requests remaining`,
           });
         }
@@ -126,14 +134,14 @@ export function GitHubActivitySection({ dateRange }: GitHubActivitySectionProps)
         // Reload activities from database after successful sync
         await loadActivities();
       } else {
-        toast.error('Sync failed', {
-          description: result.error || 'Failed to sync activities',
+        toast.error("Sync failed", {
+          description: result.error || "Failed to sync activities",
         });
       }
     } catch (error) {
-      console.error('Error syncing:', error);
-      toast.error('Sync failed', {
-        description: 'An unexpected error occurred',
+      console.error("Error syncing:", error);
+      toast.error("Sync failed", {
+        description: "An unexpected error occurred",
       });
     } finally {
       setIsSyncing(false);
@@ -193,19 +201,21 @@ export function GitHubActivitySection({ dateRange }: GitHubActivitySectionProps)
                 variant="outline"
                 className="gap-2"
               >
-                <RefreshCwIcon className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
-                {isSyncing ? 'Syncing...' : 'Sync'}
+                <RefreshCwIcon
+                  className={`h-4 w-4 ${isSyncing ? "animate-spin" : ""}`}
+                />
+                {isSyncing ? "Syncing..." : "Sync"}
               </Button>
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-
           {error && (
             <div className="text-center py-8 px-4">
               <p className="text-base text-destructive mb-2">{error}</p>
               <p className="text-sm text-muted-foreground">
-                Please try signing in again or contact support if the issue persists
+                Please try signing in again or contact support if the issue
+                persists
               </p>
             </div>
           )}

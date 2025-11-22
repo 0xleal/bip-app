@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Check, Copy } from 'lucide-react';
-import type { ContentSuggestion } from '@/lib/ai/types';
-import { toast } from 'sonner';
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Check, Copy } from "lucide-react";
+import type { ContentSuggestion } from "@/lib/ai/types";
+import { toast } from "sonner";
 
 interface ContentSuggestionCardProps {
   suggestion: ContentSuggestion;
@@ -13,20 +13,23 @@ interface ContentSuggestionCardProps {
 }
 
 const formatLabels: Record<string, string> = {
-  'short-post': 'Short Post',
-  'thread': 'Thread',
-  'code-snippet': 'Code Snippet',
-  'til': 'TIL',
-  'before-after': 'Before/After',
+  "short-post": "Short Post",
+  thread: "Thread",
+  "code-snippet": "Code Snippet",
+  til: "TIL",
+  "before-after": "Before/After",
 };
 
 const toneIcons: Record<string, string> = {
-  conversational: '💬',
-  technical: '⚙️',
-  reflective: '🤔',
+  conversational: "💬",
+  technical: "⚙️",
+  reflective: "🤔",
 };
 
-export function ContentSuggestionCard({ suggestion, index }: ContentSuggestionCardProps) {
+export function ContentSuggestionCard({
+  suggestion,
+  index,
+}: ContentSuggestionCardProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -39,12 +42,12 @@ export function ContentSuggestionCard({ suggestion, index }: ContentSuggestionCa
 
       await navigator.clipboard.writeText(content);
       setCopied(true);
-      toast.success('Copied to clipboard!');
+      toast.success("Copied to clipboard!");
 
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
-      console.error('Failed to copy:', error);
-      toast.error('Failed to copy to clipboard');
+      console.error("Failed to copy:", error);
+      toast.error("Failed to copy to clipboard");
     }
   };
 
@@ -60,7 +63,7 @@ export function ContentSuggestionCard({ suggestion, index }: ContentSuggestionCa
               {formatLabels[suggestion.format] || suggestion.format}
             </span>
             <span className="px-2 py-1 rounded-md bg-muted">
-              {toneIcons[suggestion.tone] || ''} {suggestion.tone}
+              {toneIcons[suggestion.tone] || ""} {suggestion.tone}
             </span>
           </div>
         </div>

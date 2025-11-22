@@ -1,29 +1,29 @@
-import type { Tables, TablesInsert } from '@/types/supabase';
+import type { Tables, TablesInsert } from "@/types/supabase";
 
 /**
  * GitHub Activity as stored in database
  */
-export type GitHubActivity = Tables<'github_activities'>;
+export type GitHubActivity = Tables<"github_activities">;
 
 /**
  * GitHub Activity for insertion into database
  */
-export type GitHubActivityInsert = TablesInsert<'github_activities'>;
+export type GitHubActivityInsert = TablesInsert<"github_activities">;
 
 /**
  * Date range options for filtering activities
  */
-export type DateRange = '24h' | '7d' | '30d' | 'custom';
+export type DateRange = "24h" | "7d" | "30d" | "custom";
 
 /**
  * Activity type options
  */
 export type ActivityType =
-  | 'commit'
-  | 'pr_created'
-  | 'pr_reviewed'
-  | 'star'
-  | 'issue';
+  | "commit"
+  | "pr_created"
+  | "pr_reviewed"
+  | "star"
+  | "issue";
 
 /**
  * Result from syncing GitHub activities

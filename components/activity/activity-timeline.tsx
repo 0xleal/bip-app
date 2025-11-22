@@ -1,14 +1,16 @@
-import { ActivityCard } from './activity-card';
-import type { GitHubActivity } from '@/lib/github/types';
+import { ActivityCard } from "./activity-card";
+import type { GitHubActivity } from "@/lib/github/types";
 
 /**
  * Group activities by date
  */
-function groupActivitiesByDate(activities: GitHubActivity[]): Record<string, GitHubActivity[]> {
+function groupActivitiesByDate(
+  activities: GitHubActivity[]
+): Record<string, GitHubActivity[]> {
   const grouped: Record<string, GitHubActivity[]> = {};
 
   for (const activity of activities) {
-    const date = new Date(activity.occurred_at).toISOString().split('T')[0];
+    const date = new Date(activity.occurred_at).toISOString().split("T")[0];
 
     if (!grouped[date]) {
       grouped[date] = [];
@@ -30,19 +32,31 @@ function formatDateHeader(dateString: string): string {
   yesterday.setDate(yesterday.getDate() - 1);
 
   // Reset time to compare just dates
-  const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const yesterdayOnly = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+  const dateOnly = new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate()
+  );
+  const todayOnly = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate()
+  );
+  const yesterdayOnly = new Date(
+    yesterday.getFullYear(),
+    yesterday.getMonth(),
+    yesterday.getDate()
+  );
 
   if (dateOnly.getTime() === todayOnly.getTime()) {
-    return 'Today';
+    return "Today";
   } else if (dateOnly.getTime() === yesterdayOnly.getTime()) {
-    return 'Yesterday';
+    return "Yesterday";
   } else {
-    return date.toLocaleDateString('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
+    return date.toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
     });
   }
 }
@@ -59,14 +73,17 @@ export function ActivityTimeline({ activities }: ActivityTimelineProps) {
           No activity found for this time range
         </p>
         <p className="text-sm text-muted-foreground">
-          Try selecting a different date range or click Sync to fetch your latest activity
+          Try selecting a different date range or click Sync to fetch your
+          latest activity
         </p>
       </div>
     );
   }
 
   const groupedActivities = groupActivitiesByDate(activities);
-  const sortedDates = Object.keys(groupedActivities).sort((a, b) => b.localeCompare(a));
+  const sortedDates = Object.keys(groupedActivities).sort((a, b) =>
+    b.localeCompare(a)
+  );
 
   return (
     <div className="space-y-10">

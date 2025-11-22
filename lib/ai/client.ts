@@ -1,18 +1,18 @@
-import Anthropic from '@anthropic-ai/sdk';
-import type { ContentSuggestion, GeneratedContent } from './types';
+import Anthropic from "@anthropic-ai/sdk";
+import type { ContentSuggestion, GeneratedContent } from "./types";
 import {
   SHOW_YOUR_WORK_SYSTEM_PROMPT,
   PROMPT_VERSION,
   formatUserInput,
   truncateInput,
-} from './prompts';
+} from "./prompts";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
 });
 
 if (!process.env.ANTHROPIC_API_KEY) {
-  throw new Error('ANTHROPIC_API_KEY environment variable is required');
+  throw new Error("ANTHROPIC_API_KEY environment variable is required");
 }
 
 export interface GenerateContentInput {
@@ -48,7 +48,9 @@ export async function generateContent(
 
     if (truncated) {
       console.log(
-        `Input truncated: ${input.activities.length + input.notes.length} → ${activities.length + notes.length} items`
+        `Input truncated: ${input.activities.length + input.notes.length} → ${
+          activities.length + notes.length
+        } items`
       );
     }
 
@@ -58,13 +60,13 @@ export async function generateContent(
     // Call Anthropic API
     // Using Claude Sonnet 4.5 - the latest model recommended for best balance of intelligence, speed, and cost
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5-20250929',
+      model: "claude-sonnet-4-5-20250929",
       max_tokens: 2000,
       temperature: 0.7,
       system: SHOW_YOUR_WORK_SYSTEM_PROMPT,
       messages: [
         {
-          role: 'user',
+          role: "user",
           content: userPrompt,
         },
       ],
@@ -74,12 +76,14 @@ export async function generateContent(
     const inputTokens = response.usage.input_tokens;
     const outputTokens = response.usage.output_tokens;
 
-    console.log(`API usage - Input: ${inputTokens}, Output: ${outputTokens} tokens`);
+    console.log(
+      `API usage - Input: ${inputTokens}, Output: ${outputTokens} tokens`
+    );
 
     // Parse the response
     const textContent = response.content[0];
-    if (textContent.type !== 'text') {
-      throw new Error('Unexpected response type from Anthropic API');
+    if (textContent.type !== "text") {
+      throw new Error("Unexpected response type from Anthropic API");
     }
 
     // Extract JSON from the response (it might be wrapped in markdown code blocks)
@@ -99,12 +103,17 @@ export async function generateContent(
 
     // Validate suggestions
     if (!Array.isArray(suggestions) || suggestions.length === 0) {
-      throw new Error('No valid suggestions generated');
+      throw new Error("No valid suggestions generated");
     }
 
     // Ensure each suggestion has required fields
     suggestions.forEach((suggestion, index) => {
-      if (!suggestion.hook || !suggestion.body || !suggestion.tone || !suggestion.format) {
+      if (
+        !suggestion.hook ||
+        !suggestion.body ||
+        !suggestion.tone ||
+        !suggestion.format
+      ) {
         throw new Error(`Suggestion ${index + 1} is missing required fields`);
       }
     });
@@ -116,20 +125,22 @@ export async function generateContent(
       outputTokens,
     };
   } catch (error) {
-    console.error('Error generating content:', error);
+    console.error("Error generating content:", error);
 
     if (error instanceof Anthropic.APIError) {
       if (error.status === 429) {
-        throw new Error('Anthropic API rate limit exceeded. Please try again later.');
+        throw new Error(
+          "Anthropic API rate limit exceeded. Please try again later."
+        );
       }
       if (error.status === 401) {
-        throw new Error('Invalid Anthropic API key');
+        throw new Error("Invalid Anthropic API key");
       }
       throw new Error(`Anthropic API error: ${error.message}`);
     }
 
     if (error instanceof SyntaxError) {
-      throw new Error('Failed to parse AI response. Please try again.');
+      throw new Error("Failed to parse AI response. Please try again.");
     }
 
     throw error;

@@ -1,5 +1,5 @@
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
   GitCommitIcon,
   GitPullRequestIcon,
@@ -7,14 +7,16 @@ import {
   MessageSquareIcon,
   ExternalLinkIcon,
   GitBranchIcon,
-} from 'lucide-react';
-import type { GitHubActivity } from '@/lib/github/types';
+} from "lucide-react";
+import type { GitHubActivity } from "@/lib/github/types";
 
 /**
  * Extract commits from activity metadata
  */
-function getCommitsFromMetadata(metadata: unknown): Array<{ sha: string; message: string }> {
-  if (!metadata || typeof metadata !== 'object') return [];
+function getCommitsFromMetadata(
+  metadata: unknown
+): Array<{ sha: string; message: string }> {
+  if (!metadata || typeof metadata !== "object") return [];
 
   const metadataObj = metadata as Record<string, unknown>;
   const commits = metadataObj.commits;
@@ -22,13 +24,11 @@ function getCommitsFromMetadata(metadata: unknown): Array<{ sha: string; message
   if (!Array.isArray(commits)) return [];
 
   return commits
-    .filter((c): c is { sha: string; message: string } =>
-      typeof c === 'object' &&
-      c !== null &&
-      'sha' in c &&
-      'message' in c
+    .filter(
+      (c): c is { sha: string; message: string } =>
+        typeof c === "object" && c !== null && "sha" in c && "message" in c
     )
-    .map(c => ({
+    .map((c) => ({
       sha: c.sha,
       message: c.message,
     }));
@@ -38,18 +38,18 @@ function getCommitsFromMetadata(metadata: unknown): Array<{ sha: string; message
  * Get icon component based on activity type
  */
 function getActivityIcon(activityType: string) {
-  const iconProps = { className: 'h-5 w-5 text-muted-foreground' };
+  const iconProps = { className: "h-5 w-5 text-muted-foreground" };
 
   switch (activityType) {
-    case 'commit':
+    case "commit":
       return <GitCommitIcon {...iconProps} />;
-    case 'pr_created':
+    case "pr_created":
       return <GitPullRequestIcon {...iconProps} />;
-    case 'pr_reviewed':
+    case "pr_reviewed":
       return <GitBranchIcon {...iconProps} />;
-    case 'star':
+    case "star":
       return <StarIcon {...iconProps} />;
-    case 'issue':
+    case "issue":
       return <MessageSquareIcon {...iconProps} />;
     default:
       return <GitCommitIcon {...iconProps} />;
@@ -71,13 +71,13 @@ function formatTimeAgo(timestamp: string): string {
   if (diffDays > 30) {
     return date.toLocaleDateString();
   } else if (diffDays > 0) {
-    return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
   } else if (diffHours > 0) {
-    return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
   } else if (diffMinutes > 0) {
-    return `${diffMinutes} minute${diffMinutes > 1 ? 's' : ''} ago`;
+    return `${diffMinutes} minute${diffMinutes > 1 ? "s" : ""} ago`;
   } else {
-    return 'Just now';
+    return "Just now";
   }
 }
 
@@ -90,9 +90,10 @@ export function ActivityCard({ activity }: ActivityCardProps) {
   const timeAgo = formatTimeAgo(activity.occurred_at);
 
   // Get commit details for multi-commit pushes
-  const commits = activity.activity_type === 'commit'
-    ? getCommitsFromMetadata(activity.metadata)
-    : [];
+  const commits =
+    activity.activity_type === "commit"
+      ? getCommitsFromMetadata(activity.metadata)
+      : [];
   const hasMultipleCommits = commits.length > 1;
 
   return (
@@ -116,7 +117,7 @@ export function ActivityCard({ activity }: ActivityCardProps) {
             <div className="mt-3 mb-2 space-y-1.5">
               {commits.map((commit) => {
                 // Extract first line of commit message
-                const firstLine = commit.message.split('\n')[0];
+                const firstLine = commit.message.split("\n")[0];
                 const shortSha = commit.sha.substring(0, 7);
 
                 return (
@@ -149,12 +150,7 @@ export function ActivityCard({ activity }: ActivityCardProps) {
 
         {activity.url && (
           <div className="flex-shrink-0">
-            <Button
-              variant="ghost"
-              size="sm"
-              asChild
-              className="h-8 px-2"
-            >
+            <Button variant="ghost" size="sm" asChild className="h-8 px-2">
               <a
                 href={activity.url}
                 target="_blank"

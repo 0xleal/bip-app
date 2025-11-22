@@ -1,24 +1,24 @@
-'use client';
+"use client";
 
-import { useState, useRef, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { createNote } from '@/app/actions/notes';
-import { toast } from 'sonner';
+import { useState, useRef, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { createNote } from "@/app/actions/notes";
+import { toast } from "sonner";
 
 interface NoteFormProps {
   onNoteCreated: () => void;
 }
 
 export function NoteForm({ onNoteCreated }: NoteFormProps) {
-  const [content, setContent] = useState('');
+  const [content, setContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = "auto";
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
     }
   }, [content]);
@@ -27,7 +27,7 @@ export function NoteForm({ onNoteCreated }: NoteFormProps) {
     e.preventDefault();
 
     if (!content.trim()) {
-      toast.error('Note cannot be empty');
+      toast.error("Note cannot be empty");
       return;
     }
 
@@ -37,17 +37,17 @@ export function NoteForm({ onNoteCreated }: NoteFormProps) {
       const result = await createNote(content);
 
       if (result.error) {
-        toast.error('Failed to create note', {
+        toast.error("Failed to create note", {
           description: result.error,
         });
       } else {
-        toast.success('Note created successfully');
-        setContent('');
+        toast.success("Note created successfully");
+        setContent("");
         onNoteCreated();
       }
     } catch (error) {
-      console.error('Error creating note:', error);
-      toast.error('An unexpected error occurred');
+      console.error("Error creating note:", error);
+      toast.error("An unexpected error occurred");
     } finally {
       setIsSubmitting(false);
     }
@@ -73,10 +73,10 @@ export function NoteForm({ onNoteCreated }: NoteFormProps) {
           <p
             className={`text-xs ${
               isOverLimit
-                ? 'text-destructive font-medium'
+                ? "text-destructive font-medium"
                 : isNearLimit
-                  ? 'text-orange-500'
-                  : 'text-muted-foreground'
+                ? "text-orange-500"
+                : "text-muted-foreground"
             }`}
           >
             {characterCount} / {maxCharacters} characters
@@ -86,7 +86,7 @@ export function NoteForm({ onNoteCreated }: NoteFormProps) {
             disabled={isSubmitting || !content.trim() || isOverLimit}
             className="bg-orange-500 hover:bg-orange-600 text-white"
           >
-            {isSubmitting ? 'Adding...' : 'Add Note'}
+            {isSubmitting ? "Adding..." : "Add Note"}
           </Button>
         </div>
       </div>

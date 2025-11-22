@@ -1,5 +1,5 @@
-import { getServerSession } from 'next-auth';
-import { authOptions } from './config';
+import { getServerSession } from "next-auth";
+import { authOptions } from "./config";
 
 /**
  * Get the current session on the server
@@ -17,7 +17,7 @@ export async function requireAuth() {
   const session = await getCurrentSession();
 
   if (!session?.user) {
-    throw new Error('Unauthorized');
+    throw new Error("Unauthorized");
   }
 
   return session.user;

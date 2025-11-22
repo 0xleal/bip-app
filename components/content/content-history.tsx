@@ -1,12 +1,18 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronUp } from 'lucide-react';
-import { ContentSuggestionCard } from './content-suggestion-card';
-import { getContentHistoryAction } from '@/app/actions/content';
-import type { ContentSuggestion } from '@/lib/ai/types';
+import { useState, useEffect } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { ContentSuggestionCard } from "./content-suggestion-card";
+import { getContentHistoryAction } from "@/app/actions/content";
+import type { ContentSuggestion } from "@/lib/ai/types";
 
 export function ContentHistory() {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -34,11 +40,11 @@ export function ContentHistory() {
       if (result.success && result.history) {
         setHistory(result.history);
       } else {
-        setError(result.error || 'Failed to load history');
+        setError(result.error || "Failed to load history");
       }
     } catch (err) {
-      console.error('Error loading history:', err);
-      setError('Failed to load history');
+      console.error("Error loading history:", err);
+      setError("Failed to load history");
     } finally {
       setLoading(false);
     }
@@ -50,7 +56,9 @@ export function ContentHistory() {
         <div className="flex items-center justify-between">
           <div>
             <CardTitle>Content History</CardTitle>
-            <CardDescription>Your past 10 generated content suggestions</CardDescription>
+            <CardDescription>
+              Your past 10 generated content suggestions
+            </CardDescription>
           </div>
           <Button
             variant="ghost"
@@ -97,7 +105,8 @@ export function ContentHistory() {
 
           {!loading && !error && history && history.length === 0 && (
             <p className="text-sm text-muted-foreground">
-              No content history yet. Generate your first content to see it here!
+              No content history yet. Generate your first content to see it
+              here!
             </p>
           )}
 

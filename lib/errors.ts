@@ -31,10 +31,7 @@ export class NotFoundError extends AppError {
 }
 
 export class RateLimitError extends AppError {
-  constructor(
-    message: string = "Rate limit exceeded",
-    public resetAt?: Date
-  ) {
+  constructor(message: string = "Rate limit exceeded", public resetAt?: Date) {
     super(message, "RATE_LIMIT_ERROR", 429);
     this.name = "RateLimitError";
   }

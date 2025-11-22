@@ -1,13 +1,19 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { NoteForm } from './note-form';
-import { NotesList } from './notes-list';
-import { getNotes } from '@/app/actions/notes';
-import type { ManualNote } from '@/lib/notes/types';
-import type { DateRange } from '@/lib/github/types';
+import { useState, useEffect, useCallback } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { NoteForm } from "./note-form";
+import { NotesList } from "./notes-list";
+import { getNotes } from "@/app/actions/notes";
+import type { ManualNote } from "@/lib/notes/types";
+import type { DateRange } from "@/lib/github/types";
 
 function NotesSkeletonLoader() {
   return (
@@ -50,8 +56,8 @@ export function ManualNotesSection({ dateRange }: ManualNotesSectionProps) {
         setNotes(result.notes);
       }
     } catch (err) {
-      console.error('Error loading notes:', err);
-      setError('Failed to load notes');
+      console.error("Error loading notes:", err);
+      setError("Failed to load notes");
       setNotes([]);
     } finally {
       setLoading(false);
@@ -91,14 +97,17 @@ export function ManualNotesSection({ dateRange }: ManualNotesSectionProps) {
             <div className="text-center py-8 px-4">
               <p className="text-base text-destructive mb-2">{error}</p>
               <p className="text-sm text-muted-foreground">
-                Please try signing in again or contact support if the issue persists
+                Please try signing in again or contact support if the issue
+                persists
               </p>
             </div>
           )}
 
           {!error && loading && <NotesSkeletonLoader />}
 
-          {!error && !loading && <NotesList notes={notes} onNoteDeleted={handleNoteDeleted} />}
+          {!error && !loading && (
+            <NotesList notes={notes} onNoteDeleted={handleNoteDeleted} />
+          )}
         </CardContent>
       </Card>
     </section>

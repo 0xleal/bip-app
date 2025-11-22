@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import type { RateLimitUsage } from '@/lib/rate-limit';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import type { RateLimitUsage } from "@/lib/rate-limit";
 
 interface QuotaDisplayProps {
   usage: RateLimitUsage | null;
@@ -18,7 +18,8 @@ export function QuotaDisplay({ usage, loading }: QuotaDisplayProps) {
     );
   }
 
-  const dailyPercentage = (usage.dailyCount / (usage.dailyCount + usage.dailyRemaining)) * 100;
+  const dailyPercentage =
+    (usage.dailyCount / (usage.dailyCount + usage.dailyRemaining)) * 100;
   const isLowQuota = usage.dailyRemaining <= 2;
 
   return (
@@ -33,7 +34,7 @@ export function QuotaDisplay({ usage, loading }: QuotaDisplayProps) {
         <div className="h-2 bg-muted rounded-full overflow-hidden">
           <div
             className={`h-full transition-all duration-300 ${
-              isLowQuota ? 'bg-orange-500' : 'bg-primary'
+              isLowQuota ? "bg-orange-500" : "bg-primary"
             }`}
             style={{ width: `${dailyPercentage}%` }}
           />
@@ -46,7 +47,9 @@ export function QuotaDisplay({ usage, loading }: QuotaDisplayProps) {
       {isLowQuota && usage.dailyRemaining > 0 && (
         <Alert>
           <AlertDescription className="text-sm">
-            You have {usage.dailyRemaining} generation{usage.dailyRemaining !== 1 ? 's' : ''} remaining today. Use them wisely!
+            You have {usage.dailyRemaining} generation
+            {usage.dailyRemaining !== 1 ? "s" : ""} remaining today. Use them
+            wisely!
           </AlertDescription>
         </Alert>
       )}
@@ -55,7 +58,8 @@ export function QuotaDisplay({ usage, loading }: QuotaDisplayProps) {
         <div className="flex justify-between text-sm text-muted-foreground">
           <span>Weekly quota</span>
           <span>
-            {usage.weeklyRemaining} of {usage.weeklyRemaining + usage.weeklyCount} left
+            {usage.weeklyRemaining} of{" "}
+            {usage.weeklyRemaining + usage.weeklyCount} left
           </span>
         </div>
       </div>

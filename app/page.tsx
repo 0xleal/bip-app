@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
+import { useState } from "react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { GitHubActivitySection } from "@/components/activity/github-activity-section";
 import { ManualNotesSection } from "@/components/notes/manual-notes-section";
@@ -10,14 +10,17 @@ import { Separator } from "@/components/ui/separator";
 import type { DateRange } from "@/lib/github/types";
 
 export default function Home() {
-  const [dateRange, setDateRange] = useState<DateRange>('7d');
+  const [dateRange, setDateRange] = useState<DateRange>("7d");
 
   return (
     <DashboardLayout>
       <div className="space-y-12">
         {/* Global Date Range Filter */}
         <div className="bg-muted/30 rounded-lg p-6 border border-border/50">
-          <DateRangeFilter dateRange={dateRange} onDateRangeChange={setDateRange} />
+          <DateRangeFilter
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+          />
         </div>
 
         <Separator className="opacity-30" />
