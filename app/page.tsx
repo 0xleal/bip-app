@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { GitHubActivitySection } from "@/components/activity/github-activity-section";
 import { ManualNotesSection } from "@/components/notes/manual-notes-section";
+import { ContentGenerationSection } from "@/components/content/content-generation-section";
 import { DateRangeFilter } from "@/components/shared/date-range-filter";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import type { DateRange } from "@/lib/github/types";
 
@@ -30,24 +30,7 @@ export default function Home() {
 
         <Separator className="opacity-30" />
 
-        <section>
-          <h2 className="text-xl font-semibold text-foreground mb-6 leading-tight">
-            Generated Content
-          </h2>
-          <Card>
-            <CardHeader>
-              <CardTitle>Share Your Work</CardTitle>
-              <CardDescription>
-                AI-generated content suggestions based on your activity
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-base text-muted-foreground leading-relaxed">
-                Coming soon: Generate shareable content from your work
-              </p>
-            </CardContent>
-          </Card>
-        </section>
+        <ContentGenerationSection dateRange={dateRange} />
       </div>
     </DashboardLayout>
   );
