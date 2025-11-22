@@ -12,7 +12,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { RefreshCwIcon } from "lucide-react";
 import { ActivityTimeline } from "./activity-timeline";
-import { getNotionActivities, syncNotionActivity } from "@/app/actions/notion";
+import {
+  getNotionActivities,
+  syncNotionActivity,
+} from "@/app/actions/notion";
 import type { DateRange } from "@/lib/github/types";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";

@@ -9,22 +9,40 @@ import {
 import type { Database } from "@/types/supabase";
 
 /**
- * Notion OAuth profile response type
+ * Notion OAuth token response structure
+ * When using owner=user, Notion returns user info nested in the owner object
  */
-interface NotionProfile {
-  bot: {
-    id: string;
-    owner: {
-      user: {
-        id: string;
-        name: string;
-        avatar_url: string;
-        person?: {
-          email: string;
-        };
+interface NotionTokenResponse {
+  access_token: string;
+  bot_id: string;
+  duplicated_template_id: string | null;
+  owner: {
+    type: "user";
+    user: {
+      id: string;
+      name: string;
+      avatar_url: string;
+      type: string;
+      person?: {
+        email: string;
       };
     };
   };
+  workspace_icon: string;
+  workspace_id: string;
+  workspace_name: string;
+}
+
+/**
+ * Notion OAuth profile response type
+ * This is constructed from the token response owner.user data
+ */
+interface NotionProfile {
+  id: string;
+  name: string;
+  avatar_url: string;
+  email?: string;
+  bot_id: string;
   workspace_id: string;
   workspace_name: string;
 }
@@ -51,20 +69,91 @@ function NotionProvider(options: {
         owner: options.authorization.params.owner,
       },
     },
-    token: "https://api.notion.com/v1/oauth/token",
-    userinfo: "https://api.notion.com/v1/users/me",
+    token: {
+      url: "https://api.notion.com/v1/oauth/token",
+      async request(context) {
+        // Notion requires Basic auth with base64-encoded client_id:client_secret
+        const credentials = Buffer.from(
+          `${options.clientId}:${options.clientSecret}`
+        ).toString("base64");
+
+        const response = await fetch("https://api.notion.com/v1/oauth/token", {
+          method: "POST",
+          headers: {
+            "Authorization": `Basic ${credentials}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            grant_type: "authorization_code",
+            code: context.params.code,
+            redirect_uri: context.provider.callbackUrl,
+          }),
+        });
+
+        const data: NotionTokenResponse = await response.json();
+
+        // Log for debugging
+        if (!response.ok) {
+          console.error("[Notion OAuth] Token exchange failed:", {
+            status: response.status,
+            statusText: response.statusText,
+            error: data,
+          });
+          throw new Error(
+            `Notion token exchange failed: ${JSON.stringify(data)}`
+          );
+        }
+
+        // Extract user info from owner object (when owner=user)
+        const userInfo = data.owner?.type === "user" ? data.owner.user : null;
+
+        // Notion returns non-standard OAuth response
+        // Transform it to what NextAuth expects, including user data
+        return {
+          tokens: {
+            access_token: data.access_token,
+            token_type: "Bearer",
+            // User info from owner.user
+            user_id: userInfo?.id,
+            user_name: userInfo?.name,
+            user_avatar: userInfo?.avatar_url,
+            user_email: userInfo?.person?.email,
+            // Workspace info
+            bot_id: data.bot_id,
+            workspace_id: data.workspace_id,
+            workspace_name: data.workspace_name,
+          },
+        };
+      },
+    },
+    userinfo: {
+      // We don't actually need to call /users/me since we have all user data from token response
+      // But NextAuth requires a userinfo config, so we return the data from tokens
+      async request(context) {
+        // Construct profile from token data (already extracted from owner.user)
+        return {
+          id: context.tokens.user_id as string,
+          name: context.tokens.user_name as string,
+          avatar_url: context.tokens.user_avatar as string,
+          email: (context.tokens.user_email as string) || undefined,
+          bot_id: context.tokens.bot_id as string,
+          workspace_id: context.tokens.workspace_id as string,
+          workspace_name: context.tokens.workspace_name as string,
+        } as NotionProfile;
+      },
+    },
     clientId: options.clientId,
     clientSecret: options.clientSecret,
     profile(profile) {
-      // Return a user-like object with Notion-specific fields
+      // profile is the data from userinfo which we constructed from token response
       // The `as unknown` cast is necessary because NextAuth's User type
       // expects github_id/github_username which Notion doesn't have
       return {
-        id: profile.bot.owner.user.id,
-        name: profile.bot.owner.user.name,
-        email: profile.bot.owner.user.person?.email || null,
-        image: profile.bot.owner.user.avatar_url,
-        botId: profile.bot.id,
+        id: profile.id, // Workspace user ID from owner.user.id
+        name: profile.name,
+        email: profile.email || null,
+        image: profile.avatar_url,
+        botId: profile.bot_id,
         workspaceId: profile.workspace_id,
         workspaceName: profile.workspace_name,
       } as unknown as ReturnType<OAuthConfig<NotionProfile>["profile"]>;
@@ -100,7 +189,7 @@ export const authOptions: NextAuthOptions = {
     signIn: "/login",
   },
   callbacks: {
-    async signIn({ user, account, profile }) {
+    async signIn({ user, account, profile, email }) {
       if (!account || !profile) return false;
 
       try {
@@ -162,17 +251,38 @@ export const authOptions: NextAuthOptions = {
           const name = user.name || null;
           const avatarUrl = user.image || null;
 
-          // For Notion, we need to find existing user by email or create new one
-          // Since Notion doesn't have a unique user ID like GitHub's github_id
+          // For Notion, we need to find existing user
+          // With owner=user, Notion provides email from owner.user.person.email
           let existingUser = null;
 
+          // Strategy 1: Look up by email (should always be available with owner=user)
           if (email) {
-            const { data } = await supabaseAdmin
+            const { data, error: lookupError } = await supabaseAdmin
               .from("users")
               .select("id")
               .eq("email", email)
               .maybeSingle();
-            existingUser = data;
+
+            if (lookupError) {
+              console.error("Error looking up user by email:", lookupError);
+            } else if (data) {
+              existingUser = data;
+            }
+          }
+
+          // Strategy 2: Check if they already have Notion connected
+          if (!existingUser && notionWorkspaceUserId) {
+            const { data, error: lookupError } = await supabaseAdmin
+              .from("users")
+              .select("id")
+              .eq("notion_workspace_user_id", notionWorkspaceUserId)
+              .maybeSingle();
+
+            if (lookupError) {
+              console.error("Error looking up user by Notion ID:", lookupError);
+            } else if (data) {
+              existingUser = data;
+            }
           }
 
           const notionData: Database["public"]["Tables"]["users"]["Update"] = {
@@ -194,21 +304,19 @@ export const authOptions: NextAuthOptions = {
               .eq("id", existingUser.id);
 
             if (error) {
-              console.error(
-                "Error updating user with Notion credentials:",
-                error
-              );
+              console.error("Error updating user with Notion credentials:", error);
               return false;
             }
-          } else {
-            // Create new user (this case is unlikely in our flow since user should sign in with GitHub first)
-            console.warn(
-              "Notion sign-in without existing user - this should not happen in normal flow"
-            );
-            return false;
-          }
 
-          return true;
+            return true;
+          } else {
+            // No existing user found by email or Notion ID
+            // This is the "link account" scenario where user is already logged in with GitHub
+            // We allow the sign-in to proceed, and the jwt callback will:
+            // 1. Use the existing session token to identify the user
+            // 2. Update that user with Notion credentials
+            return true;
+          }
         }
 
         return false;
@@ -252,23 +360,52 @@ export const authOptions: NextAuthOptions = {
           id?: string;
           botId?: string;
           workspaceId?: string;
+          workspaceName?: string;
         };
 
+        // Store Notion-specific data
         token.notionWorkspaceUserId = notionProfile.id || "";
         token.notionAccessToken = account.access_token;
         token.notionBotId = notionProfile.botId;
         token.notionWorkspaceId = notionProfile.workspaceId;
 
-        // Get user ID from database by email (since Notion doesn't provide stable user ID)
-        if (token.email) {
+        // If user is already logged in (has existing token with id), preserve that user context
+        // This handles the "link account" scenario where user signed in with GitHub first
+        if (token.id && token.github_id) {
+          // Update the database with Notion credentials for this user
+          const notionData: Database["public"]["Tables"]["users"]["Update"] = {
+            notion_access_token: account.access_token || null,
+            notion_bot_id: notionProfile.botId || null,
+            notion_workspace_id: notionProfile.workspaceId || null,
+            notion_workspace_name: notionProfile.workspaceName || null,
+            notion_workspace_user_id: notionProfile.id || null,
+          };
+
+          const { error: updateError } = await supabaseAdmin
+            .from("users")
+            .update(notionData)
+            .eq("id", token.id as string);
+
+          if (updateError) {
+            console.error("Error updating user with Notion credentials:", updateError);
+          }
+        } else {
+          // No existing session token - need to find the user somehow
+          // The signIn callback should have already updated the database with Notion credentials
+          // So we just need to find the user and populate the token
           const { data: userData } = await supabaseAdmin
             .from("users")
-            .select("id")
-            .eq("email", token.email as string)
-            .single();
+            .select("id, github_id, github_username, email")
+            .eq("notion_workspace_user_id", notionProfile.id || "")
+            .maybeSingle();
 
           if (userData) {
             token.id = userData.id;
+            token.github_id = userData.github_id || "";
+            token.github_username = userData.github_username || "";
+            token.email = userData.email;
+          } else {
+            console.error("Could not find user after Notion OAuth");
           }
         }
       }
