@@ -24,12 +24,14 @@ export interface GenerateContentInput {
     provider?: string;
     repo?: string;
     url?: string;
+    metadata?: Record<string, unknown>;
   }>;
   notes: Array<{
     content: string;
     timestamp: string;
   }>;
   dateRange: string;
+  toneOfVoice?: unknown;
 }
 
 /**
@@ -56,7 +58,12 @@ export async function generateContent(
     }
 
     // Format input for the AI
-    const userPrompt = formatUserInput(activities, notes, input.dateRange);
+    const userPrompt = formatUserInput(
+      activities,
+      notes,
+      input.dateRange,
+      input.toneOfVoice,
+    );
 
     // Call Anthropic API
     // Using Claude Sonnet 4.5 - the latest model recommended for best balance of intelligence, speed, and cost
@@ -105,6 +112,18 @@ export async function generateContent(
     // Validate suggestions
     if (!Array.isArray(suggestions) || suggestions.length === 0) {
       throw new Error("No valid suggestions generated");
+    }
+
+    // Log if we got fewer or more than expected
+    if (suggestions.length < 3) {
+      console.warn(
+        `Only ${suggestions.length} suggestions generated (expected 3-5)`,
+      );
+    } else if (suggestions.length > 5) {
+      console.warn(
+        `${suggestions.length} suggestions generated (expected 3-5), truncating to 5`,
+      );
+      suggestions.splice(5);
     }
 
     // Ensure each suggestion has required fields

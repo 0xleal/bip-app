@@ -103,8 +103,8 @@ export function ContentGenerationSection({
                 Share Your Work
               </CardTitle>
               <CardDescription>
-                AI-generated content suggestions based on your activity and
-                notes
+                AI-generated tweet suggestions based on your GitHub, Notion
+                activity, notes, and writing style
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -183,9 +183,13 @@ export function ContentGenerationSection({
               {!loading && !suggestions && !error && (
                 <div className="text-center py-12 text-muted-foreground">
                   <Sparkles className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p className="text-base leading-relaxed">
-                    Click &quot;Generate Content&quot; to create shareable posts
+                  <p className="text-base leading-relaxed mb-2">
+                    Click &quot;Generate Content&quot; to create tweet options
                     from your work
+                  </p>
+                  <p className="text-sm text-muted-foreground/70">
+                    The AI will analyze your GitHub activity, Notion pages, and
+                    notes to suggest 3-5 diverse tweet options
                   </p>
                 </div>
               )}

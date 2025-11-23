@@ -151,6 +151,19 @@ export async function generateContentAction(
       };
     }
 
+    // Fetch user's tone of voice guide
+    const { data: userData, error: userError } = await supabaseAdmin
+      .from("users")
+      .select("twitter_tone_of_voice")
+      .eq("id", userId)
+      .single();
+
+    if (userError) {
+      console.error("Error fetching user data:", userError);
+    }
+
+    const toneOfVoice = userData?.twitter_tone_of_voice;
+
     // Transform activities for AI input (both GitHub and Notion)
     const formattedActivities = (activities || []).map((activity) => {
       const formatted: {
@@ -161,6 +174,7 @@ export async function generateContentAction(
         provider?: string;
         repo?: string;
         url?: string;
+        metadata?: Record<string, unknown>;
       } = {
         type: activity.activity_type,
         title: activity.title,
@@ -173,6 +187,11 @@ export async function generateContentAction(
       // Only add repo if it exists (GitHub activities have this)
       if ("repo_name" in activity && activity.repo_name) {
         formatted.repo = activity.repo_name as string;
+      }
+
+      // Include metadata for Notion activities (page content, properties, etc.)
+      if ("metadata" in activity && activity.metadata) {
+        formatted.metadata = activity.metadata as Record<string, unknown>;
       }
 
       return formatted;
@@ -189,6 +208,7 @@ export async function generateContentAction(
       activities: formattedActivities,
       notes: formattedNotes,
       dateRange,
+      toneOfVoice: toneOfVoice || undefined,
     });
 
     // Save generated content to database

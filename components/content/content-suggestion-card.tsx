@@ -13,11 +13,15 @@ interface ContentSuggestionCardProps {
 }
 
 const formatLabels: Record<string, string> = {
-  "short-post": "Short Post",
-  thread: "Thread",
+  "single-tweet": "Single Tweet",
+  "thread-starter": "Thread Starter",
   "code-snippet": "Code Snippet",
   til: "TIL",
   "before-after": "Before/After",
+  screenshot: "Screenshot",
+  // Legacy formats
+  "short-post": "Short Post",
+  thread: "Thread",
 };
 
 const toneIcons: Record<string, string> = {
@@ -58,13 +62,24 @@ export function ContentSuggestionCard({
           <CardTitle className="text-base font-medium">
             Suggestion {index + 1}
           </CardTitle>
-          <div className="flex items-center gap-2 text-xs">
+          <div className="flex items-center gap-2 text-xs flex-wrap justify-end">
             <span className="px-2 py-1 rounded-md bg-muted text-muted-foreground">
               {formatLabels[suggestion.format] || suggestion.format}
             </span>
             <span className="px-2 py-1 rounded-md bg-muted">
               {toneIcons[suggestion.tone] || ""} {suggestion.tone}
             </span>
+            {suggestion.charCount && (
+              <span
+                className={`px-2 py-1 rounded-md ${
+                  suggestion.charCount > 280
+                    ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                    : "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                }`}
+              >
+                {suggestion.charCount}/280
+              </span>
+            )}
           </div>
         </div>
       </CardHeader>

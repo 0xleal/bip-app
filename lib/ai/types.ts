@@ -9,7 +9,17 @@ export interface ContentSuggestion {
   body: string;
   optional?: string;
   tone: "conversational" | "technical" | "reflective";
-  format: "short-post" | "thread" | "code-snippet" | "til" | "before-after";
+  format:
+    | "single-tweet"
+    | "thread-starter"
+    | "code-snippet"
+    | "til"
+    | "before-after"
+    | "screenshot"
+    // Legacy formats for backwards compatibility
+    | "short-post"
+    | "thread";
+  charCount?: number;
 }
 
 export interface GeneratedContent {
