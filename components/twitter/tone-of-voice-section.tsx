@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -24,9 +24,32 @@ import type { ToneOfVoiceGuide } from "@/lib/twitter/types";
 export function ToneOfVoiceSection() {
   const [tweetUrls, setTweetUrls] = useState<string[]>(["", "", ""]);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [toneOfVoice, setToneOfVoice] = useState<ToneOfVoiceGuide | null>(null);
   const [showGuide, setShowGuide] = useState(false);
+
+  // Load existing tone of voice on mount
+  useEffect(() => {
+    loadExistingToneOfVoice();
+  }, []);
+
+  const loadExistingToneOfVoice = async () => {
+    setIsLoading(true);
+
+    try {
+      const result = await getToneOfVoice();
+
+      if (result.success && result.toneOfVoice) {
+        setToneOfVoice(result.toneOfVoice);
+        setShowGuide(true);
+      }
+      // Don't show error toast on initial load if no tone of voice exists
+    } catch (error) {
+      console.error("Error loading tone of voice:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleUrlChange = (index: number, value: string) => {
     const newUrls = [...tweetUrls];
@@ -76,24 +99,12 @@ export function ToneOfVoiceSection() {
     }
   };
 
-  const handleLoadExisting = async () => {
-    setIsLoading(true);
-
-    try {
-      const result = await getToneOfVoice();
-
-      if (result.success && result.toneOfVoice) {
-        setToneOfVoice(result.toneOfVoice);
-        setShowGuide(true);
-        toast.success("Loaded existing tone of voice");
-      } else {
-        toast.error(result.error || "No existing tone of voice found");
-      }
-    } catch (error) {
-      console.error("Error loading tone of voice:", error);
-      toast.error("An unexpected error occurred");
-    } finally {
-      setIsLoading(false);
+  const handleRefresh = async () => {
+    await loadExistingToneOfVoice();
+    if (toneOfVoice) {
+      toast.success("Refreshed tone of voice");
+    } else {
+      toast.info("No tone of voice found");
     }
   };
 
@@ -136,84 +147,83 @@ export function ToneOfVoiceSection() {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Input Section */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-semibold">Tweet URLs</h3>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleLoadExisting}
-                disabled={isLoading || isGenerating}
-              >
-                {isLoading ? (
-                  <>
-                    <LoaderCircleIcon className="h-4 w-4 mr-2 animate-spin" />
-                    Loading...
-                  </>
-                ) : (
-                  "Load Existing"
-                )}
-              </Button>
+          {/* Loading State */}
+          {isLoading && !toneOfVoice && (
+            <div className="flex items-center justify-center py-8">
+              <LoaderCircleIcon className="h-8 w-8 animate-spin text-muted-foreground" />
+              <span className="ml-2 text-muted-foreground">
+                Loading tone of voice...
+              </span>
             </div>
+          )}
 
-            <Alert>
-              <AlertDescription>
-                Provide 1-10 of your tweets to analyze your writing style. Example
-                URL: https://x.com/username/status/1234567890
-              </AlertDescription>
-            </Alert>
+          {/* Input Section */}
+          {!isLoading && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-semibold">
+                  {toneOfVoice ? "Update Tone of Voice" : "Generate Tone of Voice"}
+                </h3>
+              </div>
 
-            {tweetUrls.map((url, index) => (
-              <div key={index} className="flex gap-2">
-                <Input
-                  placeholder={`Tweet URL ${index + 1}`}
-                  value={url}
-                  onChange={(e) => handleUrlChange(index, e.target.value)}
-                  disabled={isGenerating}
-                />
-                {tweetUrls.length > 1 && (
+              <Alert>
+                <AlertDescription>
+                  Provide 1-10 of your tweets to analyze your writing style. Example
+                  URL: https://x.com/username/status/1234567890
+                </AlertDescription>
+              </Alert>
+
+              {tweetUrls.map((url, index) => (
+                <div key={index} className="flex gap-2">
+                  <Input
+                    placeholder={`Tweet URL ${index + 1}`}
+                    value={url}
+                    onChange={(e) => handleUrlChange(index, e.target.value)}
+                    disabled={isGenerating}
+                  />
+                  {tweetUrls.length > 1 && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleRemove(index)}
+                      disabled={isGenerating}
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+
+              <div className="flex gap-2">
+                {tweetUrls.length < 10 && (
                   <Button
                     variant="outline"
-                    size="icon"
-                    onClick={() => handleRemove(index)}
+                    onClick={handleAddMore}
                     disabled={isGenerating}
                   >
-                    <TrashIcon className="h-4 w-4" />
+                    Add More
                   </Button>
                 )}
-              </div>
-            ))}
-
-            <div className="flex gap-2">
-              {tweetUrls.length < 10 && (
                 <Button
-                  variant="outline"
-                  onClick={handleAddMore}
+                  onClick={handleGenerate}
                   disabled={isGenerating}
+                  className="ml-auto"
                 >
-                  Add More
+                  {isGenerating ? (
+                    <>
+                      <LoaderCircleIcon className="h-4 w-4 mr-2 animate-spin" />
+                      {toneOfVoice ? "Updating..." : "Generating..."}
+                    </>
+                  ) : (
+                    <>
+                      <SparklesIcon className="h-4 w-4 mr-2" />
+                      {toneOfVoice ? "Update Tone of Voice" : "Generate Tone of Voice"}
+                    </>
+                  )}
                 </Button>
-              )}
-              <Button
-                onClick={handleGenerate}
-                disabled={isGenerating}
-                className="ml-auto"
-              >
-                {isGenerating ? (
-                  <>
-                    <LoaderCircleIcon className="h-4 w-4 mr-2 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <SparklesIcon className="h-4 w-4 mr-2" />
-                    Generate Tone of Voice
-                  </>
-                )}
-              </Button>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Results Section */}
           {showGuide && toneOfVoice && (
