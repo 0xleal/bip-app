@@ -74,7 +74,7 @@ function NotionProvider(options: {
       async request(context) {
         // Notion requires Basic auth with base64-encoded client_id:client_secret
         const credentials = Buffer.from(
-          `${options.clientId}:${options.clientSecret}`,
+          `${options.clientId}:${options.clientSecret}`
         ).toString("base64");
 
         const response = await fetch("https://api.notion.com/v1/oauth/token", {
@@ -100,7 +100,7 @@ function NotionProvider(options: {
             error: data,
           });
           throw new Error(
-            `Notion token exchange failed: ${JSON.stringify(data)}`,
+            `Notion token exchange failed: ${JSON.stringify(data)}`
           );
         }
 
@@ -168,7 +168,7 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.GITHUB_CLIENT_SECRET!,
       authorization: {
         params: {
-          scope: "read:user user:email repo",
+          scope: "read:user user:email repo read:org",
         },
       },
     }),
@@ -306,7 +306,7 @@ export const authOptions: NextAuthOptions = {
             if (error) {
               console.error(
                 "Error updating user with Notion credentials:",
-                error,
+                error
               );
               return false;
             }
@@ -349,7 +349,7 @@ export const authOptions: NextAuthOptions = {
         const { data: userData } = await supabaseAdmin
           .from("users")
           .select(
-            "id, notion_access_token, notion_workspace_user_id, notion_bot_id, notion_workspace_id",
+            "id, notion_access_token, notion_workspace_user_id, notion_bot_id, notion_workspace_id"
           )
           .eq("github_id", token.github_id)
           .single();
@@ -403,7 +403,7 @@ export const authOptions: NextAuthOptions = {
           if (updateError) {
             console.error(
               "Error updating user with Notion credentials:",
-              updateError,
+              updateError
             );
           }
         } else {
@@ -435,11 +435,11 @@ export const authOptions: NextAuthOptions = {
         if (shouldRefresh) {
           try {
             const refreshedTokens = await refreshGitHubAccessToken(
-              token.refreshToken as string,
+              token.refreshToken as string
             );
 
             const newTokenExpiresAt = calculateTokenExpiration(
-              refreshedTokens.expires_in,
+              refreshedTokens.expires_in
             );
 
             // Update tokens in database
