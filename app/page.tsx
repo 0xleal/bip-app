@@ -6,6 +6,7 @@ import { GitHubActivitySection } from "@/components/activity/github-activity-sec
 import { NotionActivitySection } from "@/components/activity/notion-activity-section";
 import { ManualNotesSection } from "@/components/notes/manual-notes-section";
 import { ContentGenerationSection } from "@/components/content/content-generation-section";
+import { ToneOfVoiceSection } from "@/components/twitter/tone-of-voice-section";
 import { DateRangeFilter } from "@/components/shared/date-range-filter";
 import { Separator } from "@/components/ui/separator";
 import type { DateRange } from "@/lib/github/types";
@@ -23,6 +24,10 @@ export default function Home() {
             onDateRangeChange={setDateRange}
           />
         </div>
+
+        <Separator className="opacity-30" />
+
+        <ToneOfVoiceSection />
 
         <Separator className="opacity-30" />
 
