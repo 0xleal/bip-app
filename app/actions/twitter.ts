@@ -141,7 +141,10 @@ export async function getToneOfVoice(): Promise<AnalyzeToneResult> {
 /**
  * Delete the user's tone of voice guide
  */
-export async function deleteToneOfVoice(): Promise<{ success: boolean; error?: string }> {
+export async function deleteToneOfVoice(): Promise<{
+  success: boolean;
+  error?: string;
+}> {
   try {
     const session = await getCurrentSession();
 

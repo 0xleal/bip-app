@@ -165,7 +165,8 @@ export function formatUserInput(
   // Include tone of voice guide if provided
   if (toneOfVoice) {
     prompt += "\n## Your Writing Style:\n\n";
-    prompt += "Please follow this tone of voice guide when creating tweets:\n\n";
+    prompt +=
+      "Please follow this tone of voice guide when creating tweets:\n\n";
     prompt += "```json\n";
     prompt += JSON.stringify(toneOfVoice, null, 2);
     prompt += "\n```\n\n";

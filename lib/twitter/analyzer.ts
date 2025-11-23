@@ -135,7 +135,9 @@ export async function analyzeToneOfVoice(
       !toneOfVoice.dos_and_donts ||
       !toneOfVoice.final_instruction
     ) {
-      throw new Error("Generated tone of voice guide is missing required fields");
+      throw new Error(
+        "Generated tone of voice guide is missing required fields",
+      );
     }
 
     return toneOfVoice;

@@ -140,8 +140,8 @@ export function ToneOfVoiceSection() {
                 Twitter Tone of Voice
               </CardTitle>
               <CardDescription className="mt-2">
-                Analyze your tweets to generate a personalized tone of voice guide
-                for content creation
+                Analyze your tweets to generate a personalized tone of voice
+                guide for content creation
               </CardDescription>
             </div>
           </div>
@@ -162,14 +162,16 @@ export function ToneOfVoiceSection() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-base font-semibold">
-                  {toneOfVoice ? "Update Tone of Voice" : "Generate Tone of Voice"}
+                  {toneOfVoice
+                    ? "Update Tone of Voice"
+                    : "Generate Tone of Voice"}
                 </h3>
               </div>
 
               <Alert>
                 <AlertDescription>
-                  Provide 1-10 of your tweets to analyze your writing style. Example
-                  URL: https://x.com/username/status/1234567890
+                  Provide 1-10 of your tweets to analyze your writing style.
+                  Example URL: https://x.com/username/status/1234567890
                 </AlertDescription>
               </Alert>
 
@@ -217,7 +219,9 @@ export function ToneOfVoiceSection() {
                   ) : (
                     <>
                       <SparklesIcon className="h-4 w-4 mr-2" />
-                      {toneOfVoice ? "Update Tone of Voice" : "Generate Tone of Voice"}
+                      {toneOfVoice
+                        ? "Update Tone of Voice"
+                        : "Generate Tone of Voice"}
                     </>
                   )}
                 </Button>
@@ -232,12 +236,10 @@ export function ToneOfVoiceSection() {
 
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold">Your Tone of Voice Guide</h3>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleDelete}
-                  >
+                  <h3 className="text-lg font-semibold">
+                    Your Tone of Voice Guide
+                  </h3>
+                  <Button variant="outline" size="sm" onClick={handleDelete}>
                     <TrashIcon className="h-4 w-4 mr-2" />
                     Delete
                   </Button>
@@ -247,7 +249,9 @@ export function ToneOfVoiceSection() {
                   {/* Summary */}
                   <div>
                     <h4 className="font-semibold mb-2">Summary</h4>
-                    <p className="text-muted-foreground">{toneOfVoice.summary}</p>
+                    <p className="text-muted-foreground">
+                      {toneOfVoice.summary}
+                    </p>
                   </div>
 
                   {/* Tone & Personality */}
@@ -273,7 +277,9 @@ export function ToneOfVoiceSection() {
 
                   {/* Language & Style */}
                   <div>
-                    <h4 className="font-semibold mb-2">Language & Writing Style</h4>
+                    <h4 className="font-semibold mb-2">
+                      Language & Writing Style
+                    </h4>
                     <div className="space-y-1 text-muted-foreground">
                       <p>
                         <span className="font-medium">Sentence structure:</span>{" "}
@@ -287,7 +293,8 @@ export function ToneOfVoiceSection() {
                         <span className="font-medium">Slang & jargon:</span>{" "}
                         {toneOfVoice.language_and_style.slang_and_jargon}
                       </p>
-                      {toneOfVoice.language_and_style.typical_phrases.length > 0 && (
+                      {toneOfVoice.language_and_style.typical_phrases.length >
+                        0 && (
                         <div>
                           <span className="font-medium">Typical phrases:</span>
                           <ul className="list-disc list-inside ml-4 mt-1">
@@ -313,7 +320,9 @@ export function ToneOfVoiceSection() {
                         {toneOfVoice.formatting_and_structure.typical_length}
                       </p>
                       <p>
-                        <span className="font-medium">Line breaks & spacing:</span>{" "}
+                        <span className="font-medium">
+                          Line breaks & spacing:
+                        </span>{" "}
                         {
                           toneOfVoice.formatting_and_structure
                             .line_breaks_and_spacing
@@ -345,7 +354,9 @@ export function ToneOfVoiceSection() {
 
                   {/* Do's and Don'ts */}
                   <div>
-                    <h4 className="font-semibold mb-2">Do's and Don'ts</h4>
+                    <h4 className="font-semibold mb-2">
+                      Do&apos;s and Don&apos;ts
+                    </h4>
                     <div className="grid md:grid-cols-2 gap-4">
                       <div>
                         <p className="font-medium mb-1 text-green-600 dark:text-green-400">
@@ -359,7 +370,7 @@ export function ToneOfVoiceSection() {
                       </div>
                       <div>
                         <p className="font-medium mb-1 text-red-600 dark:text-red-400">
-                          Don't:
+                          Don&apos;t:
                         </p>
                         <ul className="list-disc list-inside text-muted-foreground space-y-1">
                           {toneOfVoice.dos_and_donts.donts.map((item, i) => (
