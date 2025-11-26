@@ -1,6 +1,6 @@
 # BIP App - Build In Public
 
-A Next.js application that helps developers share their coding journey by automatically tracking GitHub activity, capturing manual notes, and generating social media content with AI.
+A Next.js application that helps developers share their coding journey by automatically tracking GitHub and Notion activity, capturing manual notes, and generating social media content with AI.
 
 ## What This Does
 
