@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { createNote } from "@/app/actions/notes";
 import { toast } from "sonner";
+import { Send } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface NoteFormProps {
   onNoteCreated: () => void;
@@ -15,11 +17,10 @@ export function NoteForm({ onNoteCreated }: NoteFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;
     }
   }, [content]);
 
@@ -41,7 +42,7 @@ export function NoteForm({ onNoteCreated }: NoteFormProps) {
           description: result.error,
         });
       } else {
-        toast.success("Note created successfully");
+        toast.success("Note added");
         setContent("");
         onNoteCreated();
       }
@@ -59,37 +60,37 @@ export function NoteForm({ onNoteCreated }: NoteFormProps) {
   const isOverLimit = characterCount > maxCharacters;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
+    <form onSubmit={handleSubmit} className="space-y-3">
+      <div className="relative">
         <Textarea
           ref={textareaRef}
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="What are you learning? What did you discover? What challenged you today?"
-          className="min-h-[120px] resize-none text-base leading-relaxed"
+          placeholder="What are you learning? What did you discover?"
+          className="min-h-[100px] pr-12 text-sm leading-relaxed resize-none"
           disabled={isSubmitting}
         />
-        <div className="flex items-center justify-between">
-          <p
-            className={`text-xs ${
-              isOverLimit
-                ? "text-destructive font-medium"
-                : isNearLimit
-                  ? "text-orange-500"
-                  : "text-muted-foreground"
-            }`}
-          >
-            {characterCount} / {maxCharacters} characters
-          </p>
-          <Button
-            type="submit"
-            disabled={isSubmitting || !content.trim() || isOverLimit}
-            className="bg-orange-500 hover:bg-orange-600 text-white"
-          >
-            {isSubmitting ? "Adding..." : "Add Note"}
-          </Button>
-        </div>
+        <Button
+          type="submit"
+          disabled={isSubmitting || !content.trim() || isOverLimit}
+          size="icon"
+          className="absolute right-2 bottom-2 h-8 w-8"
+        >
+          <Send className="h-4 w-4" />
+        </Button>
       </div>
+      <p
+        className={cn(
+          "text-xs",
+          isOverLimit
+            ? "text-destructive font-medium"
+            : isNearLimit
+              ? "text-orange-500"
+              : "text-muted-foreground/60",
+        )}
+      >
+        {characterCount.toLocaleString()} / {maxCharacters.toLocaleString()}
+      </p>
     </form>
   );
 }

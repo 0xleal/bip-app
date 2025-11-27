@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Sparkles, AlertCircle } from "lucide-react";
+import { Sparkles, AlertCircle, Wand2 } from "lucide-react";
 import { QuotaDisplay } from "./quota-display";
 import { ContentSuggestionCard } from "./content-suggestion-card";
 import { ContentHistory } from "./content-history";
@@ -38,7 +38,6 @@ export function ContentGenerationSection({
   const [loadingQuota, setLoadingQuota] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Load quota on mount
   useEffect(() => {
     loadQuota();
   }, []);
@@ -87,134 +86,129 @@ export function ContentGenerationSection({
   const canGenerate =
     usage && usage.dailyRemaining > 0 && usage.weeklyRemaining > 0;
 
+  const dateRangeLabel =
+    dateRange === "24h"
+      ? "last 24 hours"
+      : dateRange === "7d"
+        ? "last 7 days"
+        : "last 30 days";
+
   return (
-    <section className="space-y-6">
-      <h2 className="text-xl font-semibold text-foreground leading-tight">
-        Generated Content
-      </h2>
+    <div className="space-y-8">
+      {/* Main Generation Card */}
+      <Card className="border-primary/20 bg-gradient-to-br from-background to-primary/[0.02]">
+        <CardHeader>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+                <Wand2 className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle>Generate Content</CardTitle>
+                <CardDescription>
+                  AI-powered tweet suggestions from your activity
+                </CardDescription>
+              </div>
+            </div>
+            <QuotaDisplay usage={usage} loading={loadingQuota} compact />
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
-      <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-        {/* Main content generation area */}
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-primary" />
-                Share Your Work
-              </CardTitle>
-              <CardDescription>
-                AI-generated tweet suggestions based on your GitHub, Notion
-                activity, notes, and writing style
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {error && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
+          {!canGenerate && usage && (
+            <Alert>
+              <AlertDescription>
+                You&apos;ve reached your generation limit. Daily quota resets at{" "}
+                {usage.dailyResetAt.toLocaleTimeString()}.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <Button
+              onClick={handleGenerate}
+              disabled={!canGenerate || loading || loadingQuota}
+              size="lg"
+              className="gap-2"
+            >
+              {loading ? (
+                <>
+                  <Sparkles className="h-4 w-4 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4" />
+                  Generate Tweets
+                </>
               )}
+            </Button>
+            <p className="text-sm text-muted-foreground">
+              Based on your {dateRangeLabel} of activity
+            </p>
+          </div>
 
-              {!canGenerate && usage && (
-                <Alert>
-                  <AlertDescription>
-                    You&apos;ve reached your generation limit. Daily quota
-                    resets at {usage.dailyResetAt.toLocaleTimeString()}.
-                  </AlertDescription>
-                </Alert>
-              )}
+          {loading && (
+            <div className="space-y-4 pt-4">
+              {[1, 2].map((i) => (
+                <div key={i} className="p-4 rounded-xl bg-muted/30 space-y-3">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-5/6" />
+                  <Skeleton className="h-4 w-4/6" />
+                  <div className="flex gap-2 pt-2">
+                    <Skeleton className="h-6 w-16 rounded-full" />
+                    <Skeleton className="h-6 w-20 rounded-full" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Button
-                  onClick={handleGenerate}
-                  disabled={!canGenerate || loading || loadingQuota}
-                  className="flex-1 sm:flex-none"
-                  size="lg"
-                >
-                  {loading ? (
-                    <>
-                      <Sparkles className="w-4 h-4 mr-2 animate-spin" />
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      Generate Content
-                    </>
-                  )}
-                </Button>
-                <p className="text-sm text-muted-foreground self-center">
-                  Based on your{" "}
-                  {dateRange === "24h"
-                    ? "last 24 hours"
-                    : dateRange === "7d"
-                      ? "last 7 days"
-                      : "last 30 days"}
+          {!loading && suggestions && suggestions.length > 0 && (
+            <div className="space-y-4 pt-2">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-foreground">
+                  {suggestions.length} suggestion
+                  {suggestions.length !== 1 ? "s" : ""} generated
                 </p>
               </div>
+              <div className="grid gap-4">
+                {suggestions.map((suggestion, index) => (
+                  <ContentSuggestionCard
+                    key={index}
+                    suggestion={suggestion}
+                    index={index}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
 
-              {loading && (
-                <div className="space-y-4 pt-4">
-                  <Skeleton className="h-48 w-full" />
-                  <Skeleton className="h-48 w-full" />
-                </div>
-              )}
+          {!loading && !suggestions && !error && (
+            <div className="text-center py-8">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted/50 mx-auto mb-4">
+                <Sparkles className="h-7 w-7 text-muted-foreground/40" />
+              </div>
+              <p className="text-sm text-muted-foreground mb-1">
+                Ready to create shareable content
+              </p>
+              <p className="text-xs text-muted-foreground/70">
+                Click generate to create tweets from your GitHub, Notion, and
+                notes
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-              {!loading && suggestions && suggestions.length > 0 && (
-                <div className="space-y-4 pt-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-medium text-foreground">
-                      Generated {suggestions.length} suggestion
-                      {suggestions.length !== 1 ? "s" : ""}
-                    </h3>
-                  </div>
-                  <div className="grid gap-4">
-                    {suggestions.map((suggestion, index) => (
-                      <ContentSuggestionCard
-                        key={index}
-                        suggestion={suggestion}
-                        index={index}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {!loading && !suggestions && !error && (
-                <div className="text-center py-12 text-muted-foreground">
-                  <Sparkles className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p className="text-base leading-relaxed mb-2">
-                    Click &quot;Generate Content&quot; to create tweet options
-                    from your work
-                  </p>
-                  <p className="text-sm text-muted-foreground/70">
-                    The AI will analyze your GitHub activity, Notion pages, and
-                    notes to suggest 3-5 diverse tweet options
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Content History */}
-          <ContentHistory />
-        </div>
-
-        {/* Sidebar with quota */}
-        <div>
-          <Card className="border-border/50 sticky top-6">
-            <CardHeader>
-              <CardTitle className="text-base">Your Quota</CardTitle>
-              <CardDescription>
-                Generation limits to manage costs
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <QuotaDisplay usage={usage} loading={loadingQuota} />
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </section>
+      {/* Content History */}
+      <ContentHistory />
+    </div>
   );
 }

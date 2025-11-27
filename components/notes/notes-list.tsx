@@ -1,12 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { deleteNote } from "@/app/actions/notes";
 import { toast } from "sonner";
 import type { ManualNote } from "@/lib/notes/types";
-import { Trash2 } from "lucide-react";
+import { Trash2, StickyNote } from "lucide-react";
 
 interface NotesListProps {
   notes: ManualNote[];
@@ -17,10 +16,7 @@ export function NotesList({ notes, onNoteDeleted }: NotesListProps) {
   const [deletingNoteId, setDeletingNoteId] = useState<string | null>(null);
 
   const handleDelete = async (noteId: string) => {
-    // Simple confirmation
-    if (!confirm("Are you sure you want to delete this note?")) {
-      return;
-    }
+    if (!confirm("Delete this note?")) return;
 
     setDeletingNoteId(noteId);
 
@@ -32,7 +28,7 @@ export function NotesList({ notes, onNoteDeleted }: NotesListProps) {
           description: result.error,
         });
       } else {
-        toast.success("Note deleted successfully");
+        toast.success("Note deleted");
         onNoteDeleted();
       }
     } catch (error) {
@@ -51,15 +47,12 @@ export function NotesList({ notes, onNoteDeleted }: NotesListProps) {
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return "Just now";
-    if (diffMins < 60)
-      return `${diffMins} minute${diffMins === 1 ? "" : "s"} ago`;
-    if (diffHours < 24)
-      return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
-    if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
+    if (diffMins < 1) return "Now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
 
     return date.toLocaleDateString("en-US", {
-      year: "numeric",
       month: "short",
       day: "numeric",
     });
@@ -67,41 +60,44 @@ export function NotesList({ notes, onNoteDeleted }: NotesListProps) {
 
   if (notes.length === 0) {
     return (
-      <div className="text-center py-12 px-4">
-        <p className="text-base text-muted-foreground leading-relaxed">
-          No notes yet. Add your first learning or discovery!
+      <div className="text-center py-8">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted/50 mx-auto mb-3">
+          <StickyNote className="h-6 w-6 text-muted-foreground/50" />
+        </div>
+        <p className="text-sm text-muted-foreground">No notes yet</p>
+        <p className="text-xs text-muted-foreground/60 mt-1">
+          Add your first learning or discovery
         </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {notes.map((note) => (
-        <Card key={note.id} className="transition-all hover:shadow-md">
-          <CardContent className="p-4">
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <p className="text-base text-foreground leading-relaxed whitespace-pre-wrap break-words">
-                  {note.content}
-                </p>
-                <p className="text-xs text-muted-foreground mt-3">
-                  {formatDate(note.created_at || "")}
-                </p>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handleDelete(note.id)}
-                disabled={deletingNoteId === note.id}
-                className="flex-shrink-0 h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                title="Delete note"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <div
+          key={note.id}
+          className="group relative flex gap-3 py-3 px-3 -mx-3 rounded-xl hover:bg-muted/30 transition-colors"
+        >
+          <div className="flex-1 min-w-0">
+            <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap break-words">
+              {note.content}
+            </p>
+            <p className="text-xs text-muted-foreground mt-2">
+              {formatDate(note.created_at || "")}
+            </p>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => handleDelete(note.id)}
+            disabled={deletingNoteId === note.id}
+            className="flex-shrink-0 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+            title="Delete note"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
       ))}
     </div>
   );

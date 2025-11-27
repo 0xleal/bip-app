@@ -8,7 +8,6 @@ import { ManualNotesSection } from "@/components/notes/manual-notes-section";
 import { ContentGenerationSection } from "@/components/content/content-generation-section";
 import { ToneOfVoiceSection } from "@/components/twitter/tone-of-voice-section";
 import { DateRangeFilter } from "@/components/shared/date-range-filter";
-import { Separator } from "@/components/ui/separator";
 import type { DateRange } from "@/lib/github/types";
 
 export default function Home() {
@@ -16,34 +15,51 @@ export default function Home() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-12">
-        {/* Global Date Range Filter */}
-        <div className="bg-muted/30 rounded-lg p-6 border border-border/50">
+      {/* Page Header with Date Filter */}
+      <div className="mb-10">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h2 className="font-serif text-2xl font-semibold text-foreground tracking-tight">
+              Your Activity
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Track, analyze, and share your development journey
+            </p>
+          </div>
           <DateRangeFilter
             dateRange={dateRange}
             onDateRangeChange={setDateRange}
           />
         </div>
+      </div>
 
-        <Separator className="opacity-30" />
+      {/* Main Content Grid */}
+      <div className="space-y-16">
+        {/* Content Generation - Primary Action */}
+        <section className="animate-slide-up stagger-1">
+          <ContentGenerationSection dateRange={dateRange} />
+        </section>
 
-        <ToneOfVoiceSection />
+        {/* Tone of Voice */}
+        <section className="animate-slide-up stagger-2">
+          <ToneOfVoiceSection />
+        </section>
 
-        <Separator className="opacity-30" />
+        {/* Activity Sources */}
+        <div className="grid gap-8 lg:grid-cols-2">
+          <section className="animate-slide-up stagger-3">
+            <GitHubActivitySection dateRange={dateRange} />
+          </section>
 
-        <GitHubActivitySection dateRange={dateRange} />
+          <section className="animate-slide-up stagger-4">
+            <NotionActivitySection dateRange={dateRange} />
+          </section>
+        </div>
 
-        <Separator className="opacity-30" />
-
-        <NotionActivitySection dateRange={dateRange} />
-
-        <Separator className="opacity-30" />
-
-        <ManualNotesSection dateRange={dateRange} />
-
-        <Separator className="opacity-30" />
-
-        <ContentGenerationSection dateRange={dateRange} />
+        {/* Manual Notes */}
+        <section className="animate-slide-up stagger-5">
+          <ManualNotesSection dateRange={dateRange} />
+        </section>
       </div>
     </DashboardLayout>
   );

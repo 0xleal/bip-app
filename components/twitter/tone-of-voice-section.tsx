@@ -10,9 +10,16 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { SparklesIcon, TrashIcon, LoaderCircleIcon } from "lucide-react";
+import {
+  SparklesIcon,
+  TrashIcon,
+  LoaderCircleIcon,
+  PlusIcon,
+  Mic2,
+  CheckCircle2,
+  XCircle,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   generateToneOfVoice,
@@ -28,7 +35,6 @@ export function ToneOfVoiceSection() {
   const [toneOfVoice, setToneOfVoice] = useState<ToneOfVoiceGuide | null>(null);
   const [showGuide, setShowGuide] = useState(false);
 
-  // Load existing tone of voice on mount
   useEffect(() => {
     loadExistingToneOfVoice();
   }, []);
@@ -43,7 +49,6 @@ export function ToneOfVoiceSection() {
         setToneOfVoice(result.toneOfVoice);
         setShowGuide(true);
       }
-      // Don't show error toast on initial load if no tone of voice exists
     } catch (error) {
       console.error("Error loading tone of voice:", error);
     } finally {
@@ -71,7 +76,6 @@ export function ToneOfVoiceSection() {
   };
 
   const handleGenerate = async () => {
-    // Filter out empty URLs
     const validUrls = tweetUrls.filter((url) => url.trim() !== "");
 
     if (validUrls.length === 0) {
@@ -87,7 +91,7 @@ export function ToneOfVoiceSection() {
       if (result.success && result.toneOfVoice) {
         setToneOfVoice(result.toneOfVoice);
         setShowGuide(true);
-        toast.success("Tone of voice generated successfully!");
+        toast.success("Tone of voice generated!");
       } else {
         toast.error(result.error || "Failed to generate tone of voice");
       }
@@ -99,19 +103,8 @@ export function ToneOfVoiceSection() {
     }
   };
 
-  const handleRefresh = async () => {
-    await loadExistingToneOfVoice();
-    if (toneOfVoice) {
-      toast.success("Refreshed tone of voice");
-    } else {
-      toast.info("No tone of voice found");
-    }
-  };
-
   const handleDelete = async () => {
-    if (!confirm("Are you sure you want to delete your tone of voice guide?")) {
-      return;
-    }
+    if (!confirm("Delete your tone of voice guide?")) return;
 
     try {
       const result = await deleteToneOfVoice();
@@ -121,7 +114,7 @@ export function ToneOfVoiceSection() {
         setShowGuide(false);
         toast.success("Tone of voice deleted");
       } else {
-        toast.error(result.error || "Failed to delete tone of voice");
+        toast.error(result.error || "Failed to delete");
       }
     } catch (error) {
       console.error("Error deleting tone of voice:", error);
@@ -130,278 +123,277 @@ export function ToneOfVoiceSection() {
   };
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-start justify-between">
+    <Card>
+      <CardHeader>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+              <Mic2 className="h-5 w-5 text-primary" />
+            </div>
             <div>
-              <CardTitle className="flex items-center gap-2">
-                <SparklesIcon className="h-5 w-5" />
-                Twitter Tone of Voice
-              </CardTitle>
-              <CardDescription className="mt-2">
-                Analyze your tweets to generate a personalized tone of voice
-                guide for content creation
+              <CardTitle>Tone of Voice</CardTitle>
+              <CardDescription>
+                Analyze your tweets to personalize content generation
               </CardDescription>
             </div>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Loading State */}
-          {isLoading && !toneOfVoice && (
-            <div className="flex items-center justify-center py-8">
-              <LoaderCircleIcon className="h-8 w-8 animate-spin text-muted-foreground" />
-              <span className="ml-2 text-muted-foreground">
-                Loading tone of voice...
-              </span>
-            </div>
+          {toneOfVoice && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleDelete}
+              className="text-muted-foreground hover:text-destructive"
+            >
+              <TrashIcon className="h-4 w-4" />
+            </Button>
           )}
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Loading State */}
+        {isLoading && !toneOfVoice && (
+          <div className="flex items-center justify-center py-8">
+            <LoaderCircleIcon className="h-6 w-6 animate-spin text-muted-foreground" />
+            <span className="ml-2 text-sm text-muted-foreground">
+              Loading...
+            </span>
+          </div>
+        )}
 
-          {/* Input Section */}
-          {!isLoading && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-base font-semibold">
-                  {toneOfVoice
-                    ? "Update Tone of Voice"
-                    : "Generate Tone of Voice"}
-                </h3>
-              </div>
+        {/* Input Section */}
+        {!isLoading && (
+          <div className="space-y-4">
+            <Alert>
+              <AlertDescription className="text-xs">
+                Provide 1-10 tweet URLs to analyze your writing style
+              </AlertDescription>
+            </Alert>
 
-              <Alert>
-                <AlertDescription>
-                  Provide 1-10 of your tweets to analyze your writing style.
-                  Example URL: https://x.com/username/status/1234567890
-                </AlertDescription>
-              </Alert>
-
+            <div className="space-y-2">
               {tweetUrls.map((url, index) => (
                 <div key={index} className="flex gap-2">
                   <Input
-                    placeholder={`Tweet URL ${index + 1}`}
+                    placeholder={`https://x.com/username/status/...`}
                     value={url}
                     onChange={(e) => handleUrlChange(index, e.target.value)}
                     disabled={isGenerating}
+                    className="text-sm"
                   />
                   {tweetUrls.length > 1 && (
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="icon"
                       onClick={() => handleRemove(index)}
                       disabled={isGenerating}
+                      className="h-11 w-11 flex-shrink-0"
                     >
                       <TrashIcon className="h-4 w-4" />
                     </Button>
                   )}
                 </div>
               ))}
+            </div>
 
-              <div className="flex gap-2">
-                {tweetUrls.length < 10 && (
-                  <Button
-                    variant="outline"
-                    onClick={handleAddMore}
-                    disabled={isGenerating}
-                  >
-                    Add More
-                  </Button>
-                )}
+            <div className="flex gap-2">
+              {tweetUrls.length < 10 && (
                 <Button
-                  onClick={handleGenerate}
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAddMore}
                   disabled={isGenerating}
-                  className="ml-auto"
                 >
-                  {isGenerating ? (
-                    <>
-                      <LoaderCircleIcon className="h-4 w-4 mr-2 animate-spin" />
-                      {toneOfVoice ? "Updating..." : "Generating..."}
-                    </>
-                  ) : (
-                    <>
-                      <SparklesIcon className="h-4 w-4 mr-2" />
-                      {toneOfVoice
-                        ? "Update Tone of Voice"
-                        : "Generate Tone of Voice"}
-                    </>
-                  )}
+                  <PlusIcon className="h-4 w-4 mr-1" />
+                  Add URL
                 </Button>
+              )}
+              <Button
+                onClick={handleGenerate}
+                disabled={isGenerating}
+                size="sm"
+                className="ml-auto"
+              >
+                {isGenerating ? (
+                  <>
+                    <LoaderCircleIcon className="h-4 w-4 mr-2 animate-spin" />
+                    Analyzing...
+                  </>
+                ) : (
+                  <>
+                    <SparklesIcon className="h-4 w-4 mr-2" />
+                    {toneOfVoice ? "Update" : "Generate"}
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Results Section */}
+        {showGuide && toneOfVoice && (
+          <div className="space-y-6 pt-4 border-t border-border/50">
+            {/* Summary */}
+            <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">
+              <p className="text-sm text-foreground leading-relaxed">
+                {toneOfVoice.summary}
+              </p>
+            </div>
+
+            {/* Tone & Personality */}
+            <div className="space-y-3">
+              <h4 className="text-sm font-semibold text-foreground">
+                Tone & Personality
+              </h4>
+              <div className="grid gap-2 text-sm">
+                <div className="flex items-start gap-2">
+                  <span className="text-muted-foreground w-28 flex-shrink-0">
+                    Overall:
+                  </span>
+                  <span className="text-foreground">
+                    {toneOfVoice.tone_and_personality.overall_tone}
+                  </span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-muted-foreground w-28 flex-shrink-0">
+                    Traits:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {toneOfVoice.tone_and_personality.personality_traits.map(
+                      (trait, i) => (
+                        <span
+                          key={i}
+                          className="px-2 py-0.5 rounded-md bg-muted text-xs text-muted-foreground"
+                        >
+                          {trait}
+                        </span>
+                      ),
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-muted-foreground w-28 flex-shrink-0">
+                    Range:
+                  </span>
+                  <span className="text-foreground">
+                    {toneOfVoice.tone_and_personality.emotional_range}
+                  </span>
+                </div>
               </div>
             </div>
-          )}
 
-          {/* Results Section */}
-          {showGuide && toneOfVoice && (
-            <>
-              <Separator />
-
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold">
-                    Your Tone of Voice Guide
-                  </h3>
-                  <Button variant="outline" size="sm" onClick={handleDelete}>
-                    <TrashIcon className="h-4 w-4 mr-2" />
-                    Delete
-                  </Button>
+            {/* Language & Style */}
+            <div className="space-y-3">
+              <h4 className="text-sm font-semibold text-foreground">
+                Language & Style
+              </h4>
+              <div className="grid gap-2 text-sm">
+                <div className="flex items-start gap-2">
+                  <span className="text-muted-foreground w-28 flex-shrink-0">
+                    Structure:
+                  </span>
+                  <span className="text-foreground">
+                    {toneOfVoice.language_and_style.sentence_structure}
+                  </span>
                 </div>
-
-                <div className="space-y-4 text-sm">
-                  {/* Summary */}
-                  <div>
-                    <h4 className="font-semibold mb-2">Summary</h4>
-                    <p className="text-muted-foreground">
-                      {toneOfVoice.summary}
-                    </p>
-                  </div>
-
-                  {/* Tone & Personality */}
-                  <div>
-                    <h4 className="font-semibold mb-2">Tone & Personality</h4>
-                    <div className="space-y-1 text-muted-foreground">
-                      <p>
-                        <span className="font-medium">Overall tone:</span>{" "}
-                        {toneOfVoice.tone_and_personality.overall_tone}
-                      </p>
-                      <p>
-                        <span className="font-medium">Personality traits:</span>{" "}
-                        {toneOfVoice.tone_and_personality.personality_traits.join(
-                          ", ",
-                        )}
-                      </p>
-                      <p>
-                        <span className="font-medium">Emotional range:</span>{" "}
-                        {toneOfVoice.tone_and_personality.emotional_range}
-                      </p>
+                <div className="flex items-start gap-2">
+                  <span className="text-muted-foreground w-28 flex-shrink-0">
+                    Vocabulary:
+                  </span>
+                  <span className="text-foreground">
+                    {toneOfVoice.language_and_style.vocabulary_level}
+                  </span>
+                </div>
+                {toneOfVoice.language_and_style.typical_phrases.length > 0 && (
+                  <div className="flex items-start gap-2">
+                    <span className="text-muted-foreground w-28 flex-shrink-0">
+                      Phrases:
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {toneOfVoice.language_and_style.typical_phrases
+                        .slice(0, 5)
+                        .map((phrase, i) => (
+                          <span
+                            key={i}
+                            className="px-2 py-0.5 rounded-md bg-muted text-xs text-muted-foreground italic"
+                          >
+                            &quot;{phrase}&quot;
+                          </span>
+                        ))}
                     </div>
                   </div>
+                )}
+              </div>
+            </div>
 
-                  {/* Language & Style */}
-                  <div>
-                    <h4 className="font-semibold mb-2">
-                      Language & Writing Style
-                    </h4>
-                    <div className="space-y-1 text-muted-foreground">
-                      <p>
-                        <span className="font-medium">Sentence structure:</span>{" "}
-                        {toneOfVoice.language_and_style.sentence_structure}
-                      </p>
-                      <p>
-                        <span className="font-medium">Vocabulary level:</span>{" "}
-                        {toneOfVoice.language_and_style.vocabulary_level}
-                      </p>
-                      <p>
-                        <span className="font-medium">Slang & jargon:</span>{" "}
-                        {toneOfVoice.language_and_style.slang_and_jargon}
-                      </p>
-                      {toneOfVoice.language_and_style.typical_phrases.length >
-                        0 && (
-                        <div>
-                          <span className="font-medium">Typical phrases:</span>
-                          <ul className="list-disc list-inside ml-4 mt-1">
-                            {toneOfVoice.language_and_style.typical_phrases.map(
-                              (phrase, i) => (
-                                <li key={i}>{phrase}</li>
-                              ),
-                            )}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Formatting & Structure */}
-                  <div>
-                    <h4 className="font-semibold mb-2">
-                      Formatting & Structure on X
-                    </h4>
-                    <div className="space-y-1 text-muted-foreground">
-                      <p>
-                        <span className="font-medium">Typical length:</span>{" "}
-                        {toneOfVoice.formatting_and_structure.typical_length}
-                      </p>
-                      <p>
-                        <span className="font-medium">
-                          Line breaks & spacing:
-                        </span>{" "}
-                        {
-                          toneOfVoice.formatting_and_structure
-                            .line_breaks_and_spacing
-                        }
-                      </p>
-                      <p>
-                        <span className="font-medium">Emoji usage:</span>{" "}
-                        {toneOfVoice.formatting_and_structure.emoji_usage}
-                      </p>
-                      <p>
-                        <span className="font-medium">Hooks & CTAs:</span>{" "}
-                        {toneOfVoice.formatting_and_structure.hooks_and_ctas}
-                      </p>
-                      {toneOfVoice.formatting_and_structure.common_templates
-                        .length > 0 && (
-                        <div>
-                          <span className="font-medium">Common templates:</span>
-                          <ul className="list-disc list-inside ml-4 mt-1">
-                            {toneOfVoice.formatting_and_structure.common_templates.map(
-                              (template, i) => (
-                                <li key={i}>{template}</li>
-                              ),
-                            )}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Do's and Don'ts */}
-                  <div>
-                    <h4 className="font-semibold mb-2">
-                      Do&apos;s and Don&apos;ts
-                    </h4>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div>
-                        <p className="font-medium mb-1 text-green-600 dark:text-green-400">
-                          Do:
-                        </p>
-                        <ul className="list-disc list-inside text-muted-foreground space-y-1">
-                          {toneOfVoice.dos_and_donts.dos.map((item, i) => (
-                            <li key={i}>{item}</li>
-                          ))}
-                        </ul>
-                      </div>
-                      <div>
-                        <p className="font-medium mb-1 text-red-600 dark:text-red-400">
-                          Don&apos;t:
-                        </p>
-                        <ul className="list-disc list-inside text-muted-foreground space-y-1">
-                          {toneOfVoice.dos_and_donts.donts.map((item, i) => (
-                            <li key={i}>{item}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Final Instruction */}
-                  <div className="bg-muted/50 p-4 rounded-lg">
-                    <h4 className="font-semibold mb-2">
-                      AI Instruction for Tweet Writing
-                    </h4>
-                    <p className="text-muted-foreground italic">
-                      {toneOfVoice.final_instruction}
-                    </p>
-                  </div>
-
-                  {/* Timestamp */}
-                  <p className="text-xs text-muted-foreground">
-                    Generated on{" "}
-                    {new Date(toneOfVoice.generated_at).toLocaleString()}
-                  </p>
+            {/* Formatting */}
+            <div className="space-y-3">
+              <h4 className="text-sm font-semibold text-foreground">
+                Formatting
+              </h4>
+              <div className="grid gap-2 text-sm">
+                <div className="flex items-start gap-2">
+                  <span className="text-muted-foreground w-28 flex-shrink-0">
+                    Length:
+                  </span>
+                  <span className="text-foreground">
+                    {toneOfVoice.formatting_and_structure.typical_length}
+                  </span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-muted-foreground w-28 flex-shrink-0">
+                    Emojis:
+                  </span>
+                  <span className="text-foreground">
+                    {toneOfVoice.formatting_and_structure.emoji_usage}
+                  </span>
                 </div>
               </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+            </div>
+
+            {/* Do's and Don'ts */}
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold text-green-600 dark:text-green-400 flex items-center gap-1.5">
+                  <CheckCircle2 className="h-4 w-4" />
+                  Do
+                </h4>
+                <ul className="space-y-1.5">
+                  {toneOfVoice.dos_and_donts.dos.slice(0, 4).map((item, i) => (
+                    <li
+                      key={i}
+                      className="text-xs text-muted-foreground leading-relaxed pl-4 relative before:absolute before:left-0 before:top-1.5 before:h-1 before:w-1 before:rounded-full before:bg-green-500"
+                    >
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold text-red-600 dark:text-red-400 flex items-center gap-1.5">
+                  <XCircle className="h-4 w-4" />
+                  Don&apos;t
+                </h4>
+                <ul className="space-y-1.5">
+                  {toneOfVoice.dos_and_donts.donts
+                    .slice(0, 4)
+                    .map((item, i) => (
+                      <li
+                        key={i}
+                        className="text-xs text-muted-foreground leading-relaxed pl-4 relative before:absolute before:left-0 before:top-1.5 before:h-1 before:w-1 before:rounded-full before:bg-red-500"
+                      >
+                        {item}
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            </div>
+
+            {/* Timestamp */}
+            <p className="text-xs text-muted-foreground/60 pt-2">
+              Generated {new Date(toneOfVoice.generated_at).toLocaleDateString()}
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
