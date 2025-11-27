@@ -1,9 +1,7 @@
 import { ActivityCard } from "./activity-card";
+import { CalendarDays } from "lucide-react";
 import type { GitHubActivity } from "@/lib/github/types";
 
-/**
- * Group activities by date
- */
 function groupActivitiesByDate(
   activities: GitHubActivity[],
 ): Record<string, GitHubActivity[]> {
@@ -22,16 +20,12 @@ function groupActivitiesByDate(
   return grouped;
 }
 
-/**
- * Format date for display (e.g., "Today", "Yesterday", "January 15, 2025")
- */
 function formatDateHeader(dateString: string): string {
   const date = new Date(dateString);
   const today = new Date();
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
 
-  // Reset time to compare just dates
   const dateOnly = new Date(
     date.getFullYear(),
     date.getMonth(),
@@ -54,9 +48,8 @@ function formatDateHeader(dateString: string): string {
     return "Yesterday";
   } else {
     return date.toLocaleDateString("en-US", {
-      month: "long",
+      month: "short",
       day: "numeric",
-      year: "numeric",
     });
   }
 }
@@ -68,13 +61,15 @@ interface ActivityTimelineProps {
 export function ActivityTimeline({ activities }: ActivityTimelineProps) {
   if (activities.length === 0) {
     return (
-      <div className="text-center py-16 px-4">
-        <p className="text-base text-muted-foreground leading-relaxed mb-4">
-          No activity found for this time range
+      <div className="text-center py-10 px-4">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted/50 mx-auto mb-4">
+          <CalendarDays className="h-6 w-6 text-muted-foreground/50" />
+        </div>
+        <p className="text-sm text-muted-foreground mb-1">
+          No activity found
         </p>
-        <p className="text-sm text-muted-foreground">
-          Try selecting a different date range or click Sync to fetch your
-          latest activity
+        <p className="text-xs text-muted-foreground/70">
+          Try a different date range or sync to fetch latest
         </p>
       </div>
     );
@@ -86,13 +81,13 @@ export function ActivityTimeline({ activities }: ActivityTimelineProps) {
   );
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6">
       {sortedDates.map((date) => (
         <div key={date}>
-          <h3 className="text-sm font-semibold text-muted-foreground mb-4 uppercase tracking-wide">
+          <h3 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">
             {formatDateHeader(date)}
           </h3>
-          <div className="space-y-3">
+          <div className="space-y-0.5">
             {groupedActivities[date].map((activity) => (
               <ActivityCard key={activity.id} activity={activity} />
             ))}

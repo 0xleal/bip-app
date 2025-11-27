@@ -1,4 +1,3 @@
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   GitCommitIcon,
@@ -14,9 +13,6 @@ import {
 import type { GitHubActivity } from "@/lib/github/types";
 import type { NotionActivityMetadata } from "@/lib/notion/types";
 
-/**
- * Extract commits from activity metadata
- */
 function getCommitsFromMetadata(
   metadata: unknown,
 ): Array<{ sha: string; message: string }> {
@@ -38,13 +34,9 @@ function getCommitsFromMetadata(
     }));
 }
 
-/**
- * Get icon component based on activity type
- */
 function getActivityIcon(activityType: string, metadata?: unknown) {
-  const iconProps = { className: "h-5 w-5 text-muted-foreground" };
+  const baseClass = "h-4 w-4";
 
-  // Check if this is a Notion activity
   if (
     activityType.startsWith("page_") ||
     activityType.startsWith("database_")
@@ -52,36 +44,30 @@ function getActivityIcon(activityType: string, metadata?: unknown) {
     const notionMetadata = metadata as NotionActivityMetadata | undefined;
 
     if (activityType.startsWith("database_")) {
-      return (
-        <DatabaseIcon {...iconProps} className="h-5 w-5 text-purple-500" />
-      );
+      return <DatabaseIcon className={`${baseClass} text-violet-500`} />;
     } else if (notionMetadata?.parent_type === "workspace") {
-      return <FileTextIcon {...iconProps} className="h-5 w-5 text-blue-500" />;
+      return <FileTextIcon className={`${baseClass} text-blue-500`} />;
     } else {
-      return <FileTextIcon {...iconProps} className="h-5 w-5 text-gray-500" />;
+      return <FileTextIcon className={`${baseClass} text-muted-foreground`} />;
     }
   }
 
-  // GitHub activity icons
   switch (activityType) {
     case "commit":
-      return <GitCommitIcon {...iconProps} />;
+      return <GitCommitIcon className={`${baseClass} text-muted-foreground`} />;
     case "pr_created":
-      return <GitPullRequestIcon {...iconProps} />;
+      return <GitPullRequestIcon className={`${baseClass} text-green-500`} />;
     case "pr_reviewed":
-      return <GitBranchIcon {...iconProps} />;
+      return <GitBranchIcon className={`${baseClass} text-blue-500`} />;
     case "star":
-      return <StarIcon {...iconProps} />;
+      return <StarIcon className={`${baseClass} text-amber-500`} />;
     case "issue":
-      return <MessageSquareIcon {...iconProps} />;
+      return <MessageSquareIcon className={`${baseClass} text-muted-foreground`} />;
     default:
-      return <GitCommitIcon {...iconProps} />;
+      return <GitCommitIcon className={`${baseClass} text-muted-foreground`} />;
   }
 }
 
-/**
- * Get Notion metadata badge text based on parent type
- */
 function getNotionLocationBadge(metadata: unknown): string | null {
   if (!metadata || typeof metadata !== "object") return null;
 
@@ -90,17 +76,14 @@ function getNotionLocationBadge(metadata: unknown): string | null {
   if (notionMetadata.parent_type === "workspace") {
     return "Workspace";
   } else if (notionMetadata.parent_type === "page_id") {
-    return "Nested page";
+    return "Nested";
   } else if (notionMetadata.parent_type === "database_id") {
-    return "In database";
+    return "Database";
   }
 
   return null;
 }
 
-/**
- * Format timestamp to relative time (e.g., "2 hours ago")
- */
 function formatTimeAgo(timestamp: string): string {
   const now = new Date();
   const date = new Date(timestamp);
@@ -111,15 +94,15 @@ function formatTimeAgo(timestamp: string): string {
   const diffDays = Math.floor(diffHours / 24);
 
   if (diffDays > 30) {
-    return date.toLocaleDateString();
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   } else if (diffDays > 0) {
-    return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+    return `${diffDays}d ago`;
   } else if (diffHours > 0) {
-    return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+    return `${diffHours}h ago`;
   } else if (diffMinutes > 0) {
-    return `${diffMinutes} minute${diffMinutes > 1 ? "s" : ""} ago`;
+    return `${diffMinutes}m ago`;
   } else {
-    return "Just now";
+    return "Now";
   }
 }
 
@@ -131,18 +114,15 @@ export function ActivityCard({ activity }: ActivityCardProps) {
   const icon = getActivityIcon(activity.activity_type, activity.metadata);
   const timeAgo = formatTimeAgo(activity.occurred_at);
 
-  // Detect activity provider
   const isNotionActivity = activity.provider === "notion";
   const isGitHubActivity = activity.provider === "github";
 
-  // Get commit details for multi-commit pushes (GitHub)
   const commits =
     isGitHubActivity && activity.activity_type === "commit"
       ? getCommitsFromMetadata(activity.metadata)
       : [];
   const hasMultipleCommits = commits.length > 1;
 
-  // Get Notion metadata
   const notionLocationBadge = isNotionActivity
     ? getNotionLocationBadge(activity.metadata)
     : null;
@@ -151,106 +131,104 @@ export function ActivityCard({ activity }: ActivityCardProps) {
   ) as NotionActivityMetadata | null;
 
   return (
-    <Card className="hover:bg-accent/50 transition-colors">
-      <CardContent className="flex gap-4 p-4">
-        <div className="flex-shrink-0 mt-1">{icon}</div>
+    <div className="group relative flex gap-3 py-3 px-3 -mx-3 rounded-xl hover:bg-muted/30 transition-colors">
+      {/* Icon */}
+      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted/50 flex-shrink-0 mt-0.5">
+        {icon}
+      </div>
 
-        <div className="flex-1 min-w-0">
-          <h4 className="font-medium text-base leading-snug mb-1 truncate">
+      {/* Content */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-start justify-between gap-2">
+          <h4 className="text-sm font-medium text-foreground leading-snug line-clamp-2">
             {activity.title}
           </h4>
-
-          {activity.description && (
-            <p className="text-sm text-muted-foreground leading-relaxed mb-2 line-clamp-2">
-              {activity.description}
-            </p>
-          )}
-
-          {/* Show Notion page content preview */}
-          {isNotionActivity && activity.content && (
-            <p className="text-sm text-muted-foreground leading-relaxed mt-2 mb-2 line-clamp-3 italic">
-              {activity.content}
-            </p>
-          )}
-
-          {/* Show commit breakdown for multi-commit pushes */}
-          {hasMultipleCommits && (
-            <div className="mt-3 mb-2 space-y-1.5">
-              {commits.map((commit) => {
-                // Extract first line of commit message
-                const firstLine = commit.message.split("\n")[0];
-                const shortSha = commit.sha.substring(0, 7);
-
-                return (
-                  <div
-                    key={commit.sha}
-                    className="flex items-start gap-2 text-xs"
-                  >
-                    <code className="flex-shrink-0 px-1.5 py-0.5 bg-muted rounded font-mono text-muted-foreground">
-                      {shortSha}
-                    </code>
-                    <span className="text-muted-foreground leading-relaxed">
-                      {firstLine}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
-            {/* GitHub repo name */}
-            {isGitHubActivity && activity.repo_name && (
-              <>
-                <span className="font-mono truncate">{activity.repo_name}</span>
-                <span>·</span>
-              </>
-            )}
-
-            {/* Notion location badge */}
-            {isNotionActivity && notionLocationBadge && (
-              <>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
-                  <FolderIcon className="h-3 w-3" />
-                  {notionLocationBadge}
-                </span>
-                <span>·</span>
-              </>
-            )}
-
-            {/* Notion object type */}
-            {isNotionActivity && notionMetadata && (
-              <>
-                <span className="capitalize">
-                  {notionMetadata.object_type === "database"
-                    ? "Database"
-                    : "Page"}
-                </span>
-                <span>·</span>
-              </>
-            )}
-
-            <time dateTime={activity.occurred_at}>{timeAgo}</time>
-          </div>
+          <time
+            dateTime={activity.occurred_at}
+            className="text-xs text-muted-foreground flex-shrink-0"
+          >
+            {timeAgo}
+          </time>
         </div>
 
-        {activity.url && (
-          <div className="flex-shrink-0">
-            <Button variant="ghost" size="sm" asChild className="h-8 px-2">
-              <a
-                href={activity.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={
-                  isNotionActivity ? "View in Notion" : "View on GitHub"
-                }
-              >
-                <ExternalLinkIcon className="h-4 w-4" />
-              </a>
-            </Button>
+        {activity.description && (
+          <p className="text-xs text-muted-foreground leading-relaxed mt-1 line-clamp-2">
+            {activity.description}
+          </p>
+        )}
+
+        {isNotionActivity && activity.content && (
+          <p className="text-xs text-muted-foreground/80 leading-relaxed mt-1.5 line-clamp-2 italic">
+            {activity.content}
+          </p>
+        )}
+
+        {hasMultipleCommits && (
+          <div className="mt-2 space-y-1">
+            {commits.slice(0, 3).map((commit) => {
+              const firstLine = commit.message.split("\n")[0];
+              const shortSha = commit.sha.substring(0, 7);
+
+              return (
+                <div
+                  key={commit.sha}
+                  className="flex items-start gap-2 text-xs"
+                >
+                  <code className="flex-shrink-0 px-1.5 py-0.5 bg-muted rounded font-mono text-[10px] text-muted-foreground">
+                    {shortSha}
+                  </code>
+                  <span className="text-muted-foreground truncate">
+                    {firstLine}
+                  </span>
+                </div>
+              );
+            })}
+            {commits.length > 3 && (
+              <p className="text-xs text-muted-foreground/60">
+                +{commits.length - 3} more commits
+              </p>
+            )}
           </div>
         )}
-      </CardContent>
-    </Card>
+
+        {/* Metadata row */}
+        <div className="flex items-center gap-2 mt-2 flex-wrap">
+          {isGitHubActivity && activity.repo_name && (
+            <span className="text-xs text-muted-foreground font-mono bg-muted/50 px-1.5 py-0.5 rounded">
+              {activity.repo_name}
+            </span>
+          )}
+
+          {isNotionActivity && notionLocationBadge && (
+            <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300">
+              <FolderIcon className="h-3 w-3" />
+              {notionLocationBadge}
+            </span>
+          )}
+
+          {isNotionActivity && notionMetadata && (
+            <span className="text-xs text-muted-foreground capitalize">
+              {notionMetadata.object_type === "database" ? "Database" : "Page"}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* External Link */}
+      {activity.url && (
+        <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+          <Button variant="ghost" size="sm" asChild className="h-7 w-7 p-0">
+            <a
+              href={activity.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={isNotionActivity ? "View in Notion" : "View on GitHub"}
+            >
+              <ExternalLinkIcon className="h-3.5 w-3.5" />
+            </a>
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }

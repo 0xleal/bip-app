@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import type { DateRange } from "@/lib/github/types";
 
 interface DateRangeFilterProps {
@@ -8,38 +8,33 @@ interface DateRangeFilterProps {
   onDateRangeChange: (range: DateRange) => void;
 }
 
+const ranges: { value: DateRange; label: string }[] = [
+  { value: "24h", label: "24h" },
+  { value: "7d", label: "7 days" },
+  { value: "30d", label: "30 days" },
+];
+
 export function DateRangeFilter({
   dateRange,
   onDateRangeChange,
 }: DateRangeFilterProps) {
   return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-      <span className="text-sm font-medium text-foreground">
-        Showing data from:
-      </span>
-      <div className="flex gap-2 flex-wrap">
-        <Button
-          variant={dateRange === "24h" ? "default" : "outline"}
-          onClick={() => onDateRangeChange("24h")}
-          size="sm"
+    <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-muted/50 border border-border/30">
+      {ranges.map((range) => (
+        <button
+          key={range.value}
+          onClick={() => onDateRangeChange(range.value)}
+          className={cn(
+            "px-4 py-1.5 text-sm font-medium rounded-lg",
+            "transition-all duration-200 ease-out",
+            dateRange === range.value
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground hover:bg-background/50",
+          )}
         >
-          Last 24h
-        </Button>
-        <Button
-          variant={dateRange === "7d" ? "default" : "outline"}
-          onClick={() => onDateRangeChange("7d")}
-          size="sm"
-        >
-          Last 7 days
-        </Button>
-        <Button
-          variant={dateRange === "30d" ? "default" : "outline"}
-          onClick={() => onDateRangeChange("30d")}
-          size="sm"
-        >
-          Last 30 days
-        </Button>
-      </div>
+          {range.label}
+        </button>
+      ))}
     </div>
   );
 }
