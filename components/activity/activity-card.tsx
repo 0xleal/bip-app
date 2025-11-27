@@ -9,6 +9,7 @@ import {
   FileTextIcon,
   DatabaseIcon,
   FolderIcon,
+  CircleIcon,
 } from "lucide-react";
 import type { GitHubActivity } from "@/lib/github/types";
 import type { NotionActivityMetadata } from "@/lib/notion/types";
@@ -230,5 +231,74 @@ export function ActivityCard({ activity }: ActivityCardProps) {
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * Compact activity item for use inside expanded repo groups
+ * Shows: icon, title, relative time - single line
+ */
+function formatTimeAgoCompact(timestamp: string): string {
+  const now = new Date();
+  const date = new Date(timestamp);
+  const diffMs = now.getTime() - date.getTime();
+  const diffMinutes = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMinutes / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffDays > 30) {
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  } else if (diffDays > 0) {
+    return `${diffDays}d`;
+  } else if (diffHours > 0) {
+    return `${diffHours}h`;
+  } else if (diffMinutes > 0) {
+    return `${diffMinutes}m`;
+  }
+  return "now";
+}
+
+function getCompactIcon(activityType: string) {
+  const baseClass = "h-3 w-3 flex-shrink-0";
+
+  switch (activityType) {
+    case "commit":
+      return <GitCommitIcon className={`${baseClass} text-muted-foreground`} />;
+    case "pr_created":
+      return <GitPullRequestIcon className={`${baseClass} text-green-500`} />;
+    case "pr_reviewed":
+      return <GitBranchIcon className={`${baseClass} text-blue-500`} />;
+    case "star":
+      return <StarIcon className={`${baseClass} text-amber-500`} />;
+    case "issue":
+      return <MessageSquareIcon className={`${baseClass} text-muted-foreground`} />;
+    default:
+      return <CircleIcon className={`${baseClass} text-muted-foreground`} />;
+  }
+}
+
+interface CompactActivityItemProps {
+  activity: GitHubActivity;
+}
+
+export function CompactActivityItem({ activity }: CompactActivityItemProps) {
+  const icon = getCompactIcon(activity.activity_type);
+  const timeAgo = formatTimeAgoCompact(activity.occurred_at);
+
+  return (
+    <a
+      href={activity.url || "#"}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-muted/50 transition-colors group"
+    >
+      {icon}
+      <span className="flex-1 text-xs text-foreground truncate group-hover:text-primary transition-colors">
+        {activity.title}
+      </span>
+      <span className="text-[10px] text-muted-foreground flex-shrink-0">
+        {timeAgo}
+      </span>
+    </a>
   );
 }
