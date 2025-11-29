@@ -6,7 +6,7 @@ import { Github, Sparkles, ArrowRight } from "lucide-react";
 
 export default function LoginPage() {
   const handleSignIn = () => {
-    signIn("github", { callbackUrl: "/" });
+    signIn("github", { callbackUrl: "/dashboard" });
   };
 
   return (
